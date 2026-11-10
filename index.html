@@ -381,6 +381,25 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
   .tb.go{padding:11px 14px}
   .tools{gap:0}
 }
+
+/* 최근 파일: 가로로 넘기는 카드 */
+.recent{flex-direction:row;overflow-x:auto;gap:12px;padding:2px 2px 8px;scroll-snap-type:x proximity}
+.recent .empty{flex:1}
+.rc{flex-direction:column;align-items:flex-start;gap:8px;width:116px;flex:none;padding:0;position:relative;scroll-snap-align:start}
+.rc:hover{background:none}
+.rc .ic{width:116px;height:116px;border-radius:16px;border:1px solid var(--line)}
+.rc .ic svg{width:42px;height:42px}
+.rc .nm{width:100%}
+.rc .nm b{font-size:13px;font-weight:700}
+.rc .del{position:absolute;top:6px;right:6px;width:28px;height:28px;background:rgba(255,255,255,.85);color:var(--sub)}
+.tip{display:flex;gap:10px;align-items:flex-start;background:#e8f1fd;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.6;color:#123a6b}
+.tip svg{margin-top:2px;color:var(--accent)}
+.tip b{font-weight:700}
+.tip .btn{margin-top:8px;padding:6px 12px;font-size:13px;background:var(--accent);border-color:var(--accent);color:#fff}
+
+.tb.has::after{content:"";position:absolute;right:3px;top:50%;border:4px solid transparent;border-top-color:currentColor;border-bottom:0;opacity:.6}
+.tb.has{padding-right:16px}
+.pop hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -400,12 +419,8 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
       <label class="search"><i data-ic="search" data-s="20"></i><input id="q" type="search" placeholder="최근 파일 검색" autocomplete="off" aria-label="최근 파일 검색"></label>
       <p class="note" id="appHint" hidden>Claude 앱 안에서 눌러도 선택 창이 안 뜨면 <a href="https://claude.ai/artifact/CBSrjs4D41EKJtGPq6PDWS" target="_blank" rel="noopener">크롬·사파리 브라우저에서 열기</a>를 눌러 주세요.</p>
       <div>
-        <h2 class="sh">보관함</h2>
-        <div class="lst" id="fchips">
-          <button class="lr" data-f="sheet"><span class="ic x"><i data-ic="sheet" data-s="22"></i></span><span class="nm"><b>엑셀</b><small>값·수식 고치기</small></span><span class="bdg x zero" id="cnt_sheet">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
-          <button class="lr" data-f="deck"><span class="ic p"><i data-ic="deck" data-s="22"></i></span><span class="nm"><b>파워포인트</b><small>글자·도형·슬라이드 고치기</small></span><span class="bdg p zero" id="cnt_deck">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
-          <button class="lr" data-f="view"><span class="ic d"><i data-ic="doc" data-s="22"></i></span><span class="nm"><b>PDF · 워드</b><small>PDF 글자·그림 넣기, 워드 보기</small></span><span class="bdg d zero" id="cnt_view">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
-        </div>
+        <div class="sec-h"><h2 class="sh" id="recentH">최근 파일</h2><button class="fc" id="fAll" hidden>전체 보기</button></div>
+        <div class="recent" id="recent"><div class="empty">아직 연 파일이 없어요.</div></div>
       </div>
       <div>
         <h2 class="sh">빠른 실행</h2>
@@ -419,9 +434,14 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
         </div>
       </div>
       <div>
-        <div class="sec-h"><h2 class="sh" id="recentH">최근 파일</h2><button class="fc" id="fAll" hidden>전체 보기</button></div>
-        <div class="recent" id="recent"><div class="empty">아직 연 파일이 없어요.</div></div>
+        <h2 class="sh">카테고리</h2>
+        <div class="lst" id="fchips">
+          <button class="lr" data-f="sheet"><span class="ic x"><i data-ic="sheet" data-s="22"></i></span><span class="nm"><b>엑셀</b><small>값·수식 고치기</small></span><span class="bdg x zero" id="cnt_sheet">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
+          <button class="lr" data-f="deck"><span class="ic p"><i data-ic="deck" data-s="22"></i></span><span class="nm"><b>파워포인트</b><small>글자·도형·슬라이드 고치기</small></span><span class="bdg p zero" id="cnt_deck">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
+          <button class="lr" data-f="view"><span class="ic d"><i data-ic="doc" data-s="22"></i></span><span class="nm"><b>PDF · 워드</b><small>PDF 글자·그림 넣기, 워드 보기</small></span><span class="bdg d zero" id="cnt_view">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
+        </div>
       </div>
+      <div class="tip" id="kakaoTip"><i data-ic="help" data-s="18"></i><div><b>카톡으로 받은 파일 여는 법</b><br>① 카톡에서 파일을 누르고 <b>공유(다른 앱으로 열기) → 바로오피스</b>를 고르세요. 바로오피스를 홈 화면에 설치해 두면 목록에 나와요.<br>② 또는 파일 열기 → 선택 창 왼쪽 위 ☰ → <b>다운로드 › KakaoTalk</b> 폴더에서 고르세요.<br><button class="btn" id="installBtn" hidden>홈 화면에 설치</button></div></div>
     </div>
     </div>
     <nav class="bnav" aria-label="주 메뉴">
@@ -517,6 +537,9 @@ pointer:'<path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.9
 shapes:'<path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/>',
 triangle:'<path d="M13.73 4a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>',rrect:'<rect width="18" height="18" x="3" y="3" rx="6"/>',
 cup:'<path d="m18 15-6-6-6 6"/>',cdown:'<path d="m6 9 6 6 6-6"/>',
+diamond:'<path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z"/>',
+arrowR:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',arrowBig:'<path d="M6 9h6V5l7 7-7 7v-4H6z"/>',
+table:'<path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>',
 front:'<rect x="8" y="8" width="8" height="8" rx="2"/><path d="M4 10a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2"/><path d="M14 20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2"/>'};
 function ic(n,sz=20){return `<svg class="lu" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`}
 for(const e of [...document.querySelectorAll('[data-ic]')])e.outerHTML=ic(e.dataset.ic,+e.dataset.s||20);
@@ -1153,10 +1176,12 @@ function drawPic(e,d,ctx){
   if(u){const im=document.createElement('img');im.src=u;im.alt='';const am=kid(b,'alphaModFix');if(am)im.style.opacity=(+am.getAttribute('amt')||100000)/100000;d.appendChild(im)}else{d.style.background='repeating-linear-gradient(45deg,#eee 0 8px,#f6f6f6 8px 16px)';}
   const sp=kid(e,'spPr');const shd=shadowOf(sp,ctx);if(shd)d.style.boxShadow=shd;const g=sp&&kid(sp,'prstGeom');if(g&&g.getAttribute('prst')==='ellipse'){d.style.borderRadius='50%';d.style.overflow='hidden'}
 }
+let mkSeq=0;
 function drawLine(e,d,ctx,x){
   const ln=lineOf(kid(e,'spPr'),kid(e,'style'),ctx)||{w:1,c:'#000'};
   const W=Math.max(x.cx*ctx.scale,1),H=Math.max(x.cy*ctx.scale,1);
-  d.innerHTML=`<svg width="${W}" height="${H}" style="overflow:visible;position:absolute;inset:0"><line x1="0" y1="0" x2="${x.cx*ctx.scale}" y2="${x.cy*ctx.scale}" stroke="${ln.c}" stroke-width="${ln.w}"${/dot/i.test(ln.dash||'')&&!/dash/i.test(ln.dash)?` stroke-dasharray="${ln.w} ${ln.w*2}"`:/dash/i.test(ln.dash||'')?` stroke-dasharray="${ln.w*4} ${ln.w*3}"`:''}/><line x1="0" y1="0" x2="${x.cx*ctx.scale}" y2="${x.cy*ctx.scale}" stroke="transparent" stroke-width="18" style="pointer-events:stroke"/></svg>`;
+  const lnEl=kid(kid(e,'spPr'),'ln'),te=lnEl&&kid(lnEl,'tailEnd'),he=lnEl&&kid(lnEl,'headEnd'),arr=n=>n&&n.getAttribute('type')&&n.getAttribute('type')!=='none',mid='mk'+(mkSeq++);
+  d.innerHTML=`<svg width="${W}" height="${H}" style="overflow:visible;position:absolute;inset:0"><defs><marker id="${mid}" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M0,0 L5,2.5 L0,5 z" fill="${ln.c}"/></marker></defs><line x1="0" y1="0" x2="${x.cx*ctx.scale}" y2="${x.cy*ctx.scale}" stroke="${ln.c}" stroke-width="${ln.w}"${arr(te)?` marker-end="url(#${mid})"`:''}${arr(he)?` marker-start="url(#${mid})"`:''}${/dot/i.test(ln.dash||'')&&!/dash/i.test(ln.dash)?` stroke-dasharray="${ln.w} ${ln.w*2}"`:/dash/i.test(ln.dash||'')?` stroke-dasharray="${ln.w*4} ${ln.w*3}"`:''}/><line x1="0" y1="0" x2="${x.cx*ctx.scale}" y2="${x.cy*ctx.scale}" stroke="transparent" stroke-width="18" style="pointer-events:stroke"/></svg>`;
 }
 function drawSp(e,d,ctx,x){
   const spPr=kid(e,'spPr'),st=kid(e,'style');
@@ -1392,17 +1417,22 @@ const isWide=()=>window.matchMedia('(min-width:900px)').matches;
 function updateDeckTools(){
   const t=$('#deckTools');if(!doc||doc.kind!=='deck')return;
   const tb=(a,i,l,c='')=>`<button class="tb ${c}" data-t="${a}" title="${l}" aria-label="${l}">${ic(i,22)}<span>${l}</span></button>`;
-  const ur='<span class="dv"></span>'+tb('undo','undo','실행 취소',doc.undo.length?'':'off')+tb('redo','redo','다시 실행',doc.redo.length?'':'off');
-  if(doc.sel)t.innerHTML=tb('desel','pointer','선택','on')+tb('props','sliders','디자인','pri m-only')+tb('edit','pencil','글자')+tb('dupS','copy','복제')+tb('fwd','cup','앞으로')+tb('bwd','cdown','뒤로')+tb('delS','trash','삭제')+ur;
-  else t.innerHTML=tb('desel','pointer','선택','on')+tb('addT','type','글상자')+tb('shapes','shapes','도형')+`<label class="tb" title="이미지">${ic('image',22)}<span>이미지</span><input type="file" class="file-hit img-in" accept="image/png,image/jpeg,image/gif" aria-label="이미지 넣기"></label>`+ur+'<span class="dv m-only"></span>'+tb('props','layers','슬라이드','m-only')+'<span class="sp"></span>'+`<button class="tb go" data-t="play">${ic('play',16)}<span>발표</span></button>`;
-  renderProps();renderLayers();
+  const dv='<span class="dv"></span>';
+  let h=tb('desel','pointer','선택','on');
+  if(doc.sel)h+=tb('props','sliders','디자인','pri m-only');
+  h+=tb('addT','type','글상자')+tb('shapes','shapes','도형','has')+`<label class="tb" title="이미지">${ic('image',22)}<span>이미지</span><input type="file" class="file-hit img-in" accept="image/png,image/jpeg,image/gif" aria-label="이미지 넣기"></label>`+tb('addTable','table','표');
+  if(doc.sel)h+=dv+tb('edit','pencil','글자 고치기')+tb('dupS','copy','복제')+tb('delS','trash','삭제');
+  h+=dv+tb('undo','undo','실행 취소',doc.undo.length?'':'off')+tb('redo','redo','다시 실행',doc.redo.length?'':'off');
+  if(!doc.sel)h+='<span class="dv m-only"></span>'+tb('props','layers','슬라이드','m-only');
+  h+='<span class="sp"></span>'+`<button class="tb go" data-t="play" title="발표" aria-label="발표">${ic('play',16)}<span>발표</span></button>`;
+  t.innerHTML=h;renderProps();renderLayers();
 }
 function closePop(){const p=$('#shapePop');if(p)p.remove()}
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('#shapePop')&&!e.target.closest('[data-t="shapes"]'))closePop()});
 function shapePop(btn){
   if($('#shapePop')){closePop();return}
   const p=el('div','pop');p.id='shapePop';
-  p.innerHTML=[['addR','square','사각형'],['addRR','rrect','둥근 사각형'],['addO','circle','원'],['addTri','triangle','삼각형'],['addLine','minus','선']].map(([a,i,l])=>`<button data-t="${a}">${ic(i,18)}${l}</button>`).join('');
+  p.innerHTML=[['addR','square','사각형'],['addRR','rrect','둥근 사각형'],['addO','circle','원'],['addTri','triangle','삼각형'],['addDia','diamond','마름모'],['addArrowS','arrowBig','화살표 도형'],0,['addLine','minus','선'],['addArrow','arrowR','화살표 선']].map(x=>x?`<button data-t="${x[0]}">${ic(x[1],18)}${x[2]}</button>`:'<hr>').join('');
   document.body.appendChild(p);const r=btn.getBoundingClientRect();
   p.style.left=Math.max(8,Math.min(window.innerWidth-p.offsetWidth-8,r.left+r.width/2-p.offsetWidth/2))+'px';p.style.top=(r.top-p.offsetHeight-8)+'px';
   p.onclick=e=>{const b=e.target.closest('[data-t]');if(b){closePop();deckAct(b.dataset.t)}};
@@ -1438,6 +1468,10 @@ async function deckAct(t){
   else if(t==='addRR')addShape(doc.cur,'roundRect');
   else if(t==='addTri')addShape(doc.cur,'triangle');
   else if(t==='addLine')addLine(doc.cur);
+  else if(t==='addArrow')addLine(doc.cur,true);
+  else if(t==='addDia')addShape(doc.cur,'diamond');
+  else if(t==='addArrowS')addShape(doc.cur,'rightArrow');
+  else if(t==='addTable')addTable(doc.cur);
   else if(t==='addT')addTextBox(doc.cur);
   else if(t==='addR')addShape(doc.cur,'rect');
   else if(t==='addO')addShape(doc.cur,'ellipse');
@@ -1455,12 +1489,23 @@ function addShape(i,kind){
   const node=D.importNode(parseXml(xml).documentElement,true);tree.insertBefore(node,kid(tree,'extLst'));
   rerenderSlide(i);selectEl(i,node);markDirty();
 }
-function addLine(i){
+function addLine(i,arrow){
   const s=doc.slides[i];doc.cur=i;snap(i);
   const D=s.part.dom,tree=D.getElementsByTagNameNS(PNS,'spTree')[0],id=maxId(D)+1,w=Math.round(doc.cx*.4);
-  const xml=`<p:cxnSp xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvCxnSpPr><p:cNvPr id="${id}" name="Line ${id}"/><p:cNvCxnSpPr/><p:nvPr/></p:nvCxnSpPr><p:spPr><a:xfrm><a:off x="${Math.round((doc.cx-w)/2)}" y="${Math.round(doc.cy/2)}"/><a:ext cx="${w}" cy="0"/></a:xfrm><a:prstGeom prst="line"><a:avLst/></a:prstGeom><a:ln w="28575"><a:solidFill><a:srgbClr val="111111"/></a:solidFill></a:ln></p:spPr></p:cxnSp>`;
+  const xml=`<p:cxnSp xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvCxnSpPr><p:cNvPr id="${id}" name="Line ${id}"/><p:cNvCxnSpPr/><p:nvPr/></p:nvCxnSpPr><p:spPr><a:xfrm><a:off x="${Math.round((doc.cx-w)/2)}" y="${Math.round(doc.cy/2)}"/><a:ext cx="${w}" cy="0"/></a:xfrm><a:prstGeom prst="line"><a:avLst/></a:prstGeom><a:ln w="28575"><a:solidFill><a:srgbClr val="111111"/></a:solidFill>${arrow?'<a:tailEnd type="triangle"/>':''}</a:ln></p:spPr></p:cxnSp>`;
   const node=D.importNode(parseXml(xml).documentElement,true);tree.insertBefore(node,kid(tree,'extLst'));
   rerenderSlide(i);selectEl(i,node);markDirty();
+}
+function addTable(i,rows=3,cols=3){
+  const s=doc.slides[i];doc.cur=i;snap(i);
+  const D=s.part.dom,tree=D.getElementsByTagNameNS(PNS,'spTree')[0],id=maxId(D)+1;
+  const w=Math.round(doc.cx*.7),rh=Math.round(doc.cy*.09),cw=Math.round(w/cols);
+  const bd=n=>`<a:${n} w="12700"><a:solidFill><a:srgbClr val="BFC5CD"/></a:solidFill></a:${n}>`;
+  const cell=head=>`<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="ko-KR" altLang="en-US" sz="1600"${head?' b="1"':''}><a:solidFill><a:srgbClr val="111111"/></a:solidFill></a:endParaRPr></a:p></a:txBody><a:tcPr>${bd('lnL')}${bd('lnR')}${bd('lnT')}${bd('lnB')}<a:solidFill><a:srgbClr val="${head?'EEF0F2':'FFFFFF'}"/></a:solidFill></a:tcPr></a:tc>`;
+  let trs='';for(let r=0;r<rows;r++)trs+=`<a:tr h="${rh}">${cell(r===0).repeat(cols)}</a:tr>`;
+  const xml=`<p:graphicFrame xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvGraphicFramePr><p:cNvPr id="${id}" name="Table ${id}"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="${Math.round((doc.cx-cw*cols)/2)}" y="${Math.round((doc.cy-rh*rows)/2)}"/><a:ext cx="${cw*cols}" cy="${rh*rows}"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr/><a:tblGrid>${`<a:gridCol w="${cw}"/>`.repeat(cols)}</a:tblGrid>${trs}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
+  const node=D.importNode(parseXml(xml).documentElement,true);tree.insertBefore(node,kid(tree,'extLst'));
+  rerenderSlide(i);selectEl(i,node);markDirty();toast('칸을 눌러 글자를 넣으세요');
 }
 async function addImage(i,file){
   const ext={'image/png':'png','image/jpeg':'jpg','image/gif':'gif'}[file.type];
@@ -1891,6 +1936,22 @@ window.addEventListener('pagehide',()=>{if(doc&&doc.dirty)persist(true)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&doc&&doc.dirty)persist(true)});
 try{if(window.self!==window.top)$('#appHint').hidden=false}catch(e){$('#appHint').hidden=false}
 refreshRecent();
+/* 설치(PWA) · 다른 앱에서 공유로 받은 파일 */
+const topLevel=(()=>{try{return window.self===window.top}catch(e){return false}})();
+let installEvt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;$('#installBtn').hidden=false});
+$('#installBtn').onclick=async()=>{if(!installEvt)return;installEvt.prompt();try{await installEvt.userChoice}catch(e){}installEvt=null;$('#installBtn').hidden=true};
+window.addEventListener('appinstalled',()=>{$('#installBtn').hidden=true;toast('설치했어요. 이제 카톡 공유 목록에 바로오피스가 나와요',4000)});
+async function takeShared(){
+  try{const c=await caches.open('baro-share'),r=await c.match('/__shared');if(!r)return;
+    const name=decodeURIComponent(r.headers.get('X-Name')||'파일'),blob=await r.blob();await c.delete('/__shared');
+    history.replaceState(null,'',location.pathname);openFile(new File([blob],name,{type:blob.type}))}catch(e){console.warn('shared',e)}
+}
+if(topLevel&&'serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if(/[?&]shared=1/.test(location.search))takeShared();
+}
+if(topLevel&&'launchQueue' in window)try{window.launchQueue.setConsumer(async p=>{if(p.files&&p.files[0])openFile(await p.files[0].getFile())})}catch(e){}
 </script>
 </body>
 </html>
