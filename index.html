@@ -551,19 +551,29 @@ const dz=$('#dropZone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)openFile(f)});
+async function sniffKind(buf){
+  const u=new Uint8Array(buf,0,Math.min(1024,buf.byteLength));let h='';for(let i=0;i<u.length;i++)h+=String.fromCharCode(u[i]);
+  if(h.includes('%PDF-'))return'pdf';
+  if(h.startsWith('PK')){try{const z=await JSZip.loadAsync(buf);if(z.file('ppt/presentation.xml'))return'pptx';if(z.file('xl/workbook.xml'))return'xlsx';if(z.file('word/document.xml'))return'docx'}catch(e){}}
+  return null;
+}
 async function openFile(f){
-  const ext=extOf(f.name);
-  if(ext==='ppt'||ext==='doc'||ext==='hwp'){toast('.'+ext+' 형식은 아직 열 수 없어요');return}
-  if(!['xlsx','xlsm','xls','csv','pptx','pdf','docx'].includes(ext)){toast('엑셀·PPT(.pptx)·PDF·워드(.docx) 파일을 골라 주세요');return}
+  const KNOWN=['xlsx','xlsm','xls','csv','pptx','pdf','docx'];
+  let name=f.name||'파일',ext=extOf(name);if(!name.includes('.'))ext='';
   const buf=await f.arrayBuffer();
-  openRecord({id:'f'+Date.now()+Math.random().toString(36).slice(2,6),name:f.name,kind:{pptx:'deck',pdf:'pdf',docx:'word'}[ext]||'sheet',buf,updated:Date.now()},true);
+  // 메신저로 받은 파일은 확장자가 없거나 틀린 경우가 있어 내용을 보고 종류를 정한다
+  const sn=await sniffKind(buf);
+  if(sn&&(!KNOWN.includes(ext)||(['pdf','pptx','docx'].includes(sn)&&sn!==ext))){if(ext!==sn)name+='.'+sn;ext=sn}
+  if(ext==='ppt'||ext==='doc'||ext==='hwp'||ext==='hwpx'){toast('.'+ext+' 형식은 아직 열 수 없어요');return}
+  if(!KNOWN.includes(ext)){toast('엑셀·PPT(.pptx)·PDF·워드(.docx) 파일을 골라 주세요');return}
+  openRecord({id:'f'+Date.now()+Math.random().toString(36).slice(2,6),name,kind:{pptx:'deck',pdf:'pdf',docx:'word'}[ext]||'sheet',buf,updated:Date.now()},true);
 }
 async function openRecord(rec,isNew){
   loading(true);
   try{
     if(rec.kind==='sheet')await openSheetDoc(rec);else if(rec.kind==='pdf')await openPdfDoc(rec);else if(rec.kind==='word')await openWordDoc(rec);else await openDeckDoc(rec);
     rec.updated=Date.now();IDB.put({...rec});
-  }catch(e){console.error(e);toast('파일을 열지 못했어요. 손상됐거나 암호가 걸린 파일일 수 있어요.',3500);show('home')}
+  }catch(e){console.error(e);const why=e&&e.message?String(e.message).slice(0,80):'';toast(/^암호|불러오지/.test(why)?why:'파일을 열지 못했어요. 손상됐거나 암호가 걸린 파일일 수 있어요.'+(why?' ('+why+')':''),5000);show('home')}
   loading(false);
 }
 
@@ -1576,7 +1586,7 @@ $('#sampleP').onclick=()=>makeDeck(true);
    ================================================================ */
 const libs={};
 function loadLib(url){return libs[url]||(libs[url]=new Promise((res,rej)=>{const x=document.createElement('script');x.src=url;x.onload=res;x.onerror=()=>{delete libs[url];rej(new Error('라이브러리를 불러오지 못했어요'))};document.head.appendChild(x)}))}
-const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',PDFW='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',MAMMOTH='https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js',PDFW='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js',MAMMOTH='https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
 const PDFLIB='https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
 const zoomHtml=()=>`<div class="zoom"><button class="ib" data-z="-1" aria-label="축소">${ic('minus',18)}</button><span>${Math.round(doc.zoom*100)}%</span><button class="ib" data-z="1" aria-label="확대">${ic('plus',18)}</button></div>`;
 function pageBar(label){const b=$('#pageBar');b.className='tabs';b.innerHTML=`<span class="tab on">${label}</span><span class="ro">보기 전용</span><span class="sp"></span>`+zoomHtml()}
@@ -1596,7 +1606,11 @@ $('#pageBar').onclick=e=>{
 $('#pageBar').addEventListener('change',e=>{if(e.target.classList.contains('pimg-in')){const f=e.target.files[0];e.target.value='';if(f&&doc&&doc.kind==='pdf')pdfAddImage(f)}});
 async function openPdfDoc(rec){
   await loadLib(PDFJS);const L=window.pdfjsLib;L.GlobalWorkerOptions.workerSrc=PDFW;
-  const pdf=await L.getDocument({data:new Uint8Array(rec.buf.slice(0))}).promise;
+  // 워커 스크립트를 화면 쪽에 직접 올려 둔다: 앱 안 브라우저처럼 워커가 막힌 곳에서도 열리게
+  try{await loadLib(PDFW)}catch(e){}
+  let pdf;
+  try{pdf=await L.getDocument({data:new Uint8Array(rec.buf.slice(0))}).promise}
+  catch(e){if(e&&e.name==='PasswordException')throw new Error('암호가 걸린 PDF는 열 수 없어요');throw e}
   const v=(await pdf.getPage(1)).getViewport({scale:1});
   doc={kind:'pdf',rec,pdf,orig:rec.buf.slice(0),zoom:1,ratio:v.height/v.width,dirty:false,psel:null,pages:[]};
   for(let i=0;i<pdf.numPages;i++)doc.pages.push({src:i,rot:0,items:[]});
