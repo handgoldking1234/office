@@ -400,6 +400,24 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
 .tb.has::after{content:"";position:absolute;right:3px;top:50%;border:4px solid transparent;border-top-color:currentColor;border-bottom:0;opacity:.6}
 .tb.has{padding-right:16px}
 .pop hr{border:0;border-top:1px solid var(--line);margin:4px 6px}
+
+/* 워드 편집 */
+.paper.word{font-size:11pt;line-height:1.6}
+.wp{white-space:pre-wrap;min-height:1.6em;outline:0;border-radius:3px;padding:1px 3px;margin:0 -3px}
+.wp[contenteditable="true"]:hover{background:#f6f8fb}
+.wp:focus{background:#eef5ff;box-shadow:0 0 0 1px #b9d3f7}
+.wp.wh{font-weight:700;margin-top:.4em}
+.wp.wli{padding-left:1.5em;position:relative}
+.wp.wli::before{content:"•";position:absolute;left:.5em}
+.wp img{max-width:100%;height:auto;vertical-align:bottom}
+.pi.box{background:#fff;outline:1px dashed #9db8dd;white-space:normal}
+.pi.box.sel{outline:2px solid #1f6feb}
+
+/* 그리기 도구 */
+.slides.tooling .slide{cursor:crosshair;touch-action:none}
+.slides.tooling .shp{pointer-events:none}
+.mk{position:absolute;inset:0;pointer-events:none;z-index:9}
+.ph b{white-space:nowrap}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -418,6 +436,11 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
     <div class="home">
       <label class="search"><i data-ic="search" data-s="20"></i><input id="q" type="search" placeholder="최근 파일 검색" autocomplete="off" aria-label="최근 파일 검색"></label>
       <p class="note" id="appHint" hidden>Claude 앱 안에서 눌러도 선택 창이 안 뜨면 <a href="https://claude.ai/artifact/CBSrjs4D41EKJtGPq6PDWS" target="_blank" rel="noopener">크롬·사파리 브라우저에서 열기</a>를 눌러 주세요.</p>
+      <div id="devSec" hidden>
+        <div class="sec-h"><h2 class="sh" id="devH">휴대폰 폴더의 최근 파일</h2><span class="row"><button class="fc" data-dv="re" id="devRe" hidden>새로 고침</button><button class="fc" data-dv="off" id="devOff" hidden>연결 해제</button></span></div>
+        <div class="recent" id="devList"></div>
+        <p class="note" id="devNote"></p>
+      </div>
       <div>
         <div class="sec-h"><h2 class="sh" id="recentH">최근 파일</h2><button class="fc" id="fAll" hidden>전체 보기</button></div>
         <div class="recent" id="recent"><div class="empty">아직 연 파일이 없어요.</div></div>
@@ -438,7 +461,7 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
         <div class="lst" id="fchips">
           <button class="lr" data-f="sheet"><span class="ic x"><i data-ic="sheet" data-s="22"></i></span><span class="nm"><b>엑셀</b><small>값·수식 고치기</small></span><span class="bdg x zero" id="cnt_sheet">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
           <button class="lr" data-f="deck"><span class="ic p"><i data-ic="deck" data-s="22"></i></span><span class="nm"><b>파워포인트</b><small>글자·도형·슬라이드 고치기</small></span><span class="bdg p zero" id="cnt_deck">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
-          <button class="lr" data-f="view"><span class="ic d"><i data-ic="doc" data-s="22"></i></span><span class="nm"><b>PDF · 워드</b><small>PDF 글자·그림 넣기, 워드 보기</small></span><span class="bdg d zero" id="cnt_view">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
+          <button class="lr" data-f="view"><span class="ic d"><i data-ic="doc" data-s="22"></i></span><span class="nm"><b>PDF · 워드</b><small>PDF·워드 고치기</small></span><span class="bdg d zero" id="cnt_view">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
         </div>
       </div>
       <div class="tip" id="kakaoTip"><i data-ic="help" data-s="18"></i><div><b>카톡으로 받은 파일 여는 법</b><br>① 카톡에서 파일을 누르고 <b>공유(다른 앱으로 열기) → 바로오피스</b>를 고르세요. 바로오피스를 홈 화면에 설치해 두면 목록에 나와요.<br>② 또는 <b>파일 열기</b>를 누르면 선택 창이 다운로드 폴더에서 열려요. 그 안의 <b>KakaoTalk</b> 폴더에 카톡 파일이 있어요. 다른 곳이 열리면 왼쪽 위 ☰ → <b>다운로드</b> 또는 <b>최근</b>을 누르세요.<br><button class="btn" id="installBtn" hidden>홈 화면에 설치</button></div></div>
@@ -540,6 +563,7 @@ cup:'<path d="m18 15-6-6-6 6"/>',cdown:'<path d="m6 9 6 6 6-6"/>',
 diamond:'<path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z"/>',
 arrowR:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',arrowBig:'<path d="M6 9h6V5l7 7-7 7v-4H6z"/>',
 table:'<path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>',
+pen:'<path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z"/><path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18"/><path d="m2.3 2.3 7.286 7.286"/><circle cx="11" cy="11" r="2"/>',
 front:'<rect x="8" y="8" width="8" height="8" rx="2"/><path d="M4 10a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2"/><path d="M14 20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2"/>'};
 function ic(n,sz=20){return `<svg class="lu" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`}
 for(const e of [...document.querySelectorAll('[data-ic]')])e.outerHTML=ic(e.dataset.ic,+e.dataset.s||20);
@@ -571,7 +595,7 @@ let recentF='all';
 const KINDS={sheet:{c:'x',i:'sheet',n:'엑셀'},deck:{c:'p',i:'deck',n:'파워포인트'},pdf:{c:'d',i:'doc',n:'PDF'},word:{c:'w',i:'doc',n:'워드'}};
 const grp=r=>r.kind==='sheet'||r.kind==='deck'?r.kind:'view';
 async function refreshRecent(){
-  const all=(await IDB.all()).sort((a,b)=>b.updated-a.updated);
+  const all=(await IDB.all()).filter(r=>r.buf).sort((a,b)=>b.updated-a.updated);
   for(const r of all.slice(20))IDB.del(r.id);
   const top=all.slice(0,20);
   for(const g of ['sheet','deck','view']){const n=top.filter(r=>grp(r)===g).length,b=$('#cnt_'+g);b.textContent=n;b.classList.toggle('zero',!n)}
@@ -593,7 +617,7 @@ async function refreshRecent(){
 $('#fchips').onclick=e=>{const f=e.target.closest('[data-f]');if(!f)return;recentF=recentF===f.dataset.f?'all':f.dataset.f;refreshRecent()};
 $('#fAll').onclick=()=>{recentF='all';refreshRecent()};
 $('#q').oninput=()=>refreshRecent();
-$('#helpBtn').onclick=()=>openSheet((b,close)=>{b.innerHTML=`<h3>사용법</h3><p><b>엑셀</b> — 셀을 누르고 위 입력줄에서 값이나 수식(=SUM 등)을 고쳐요. 원본 서식은 그대로 남아요.</p><p><b>파워포인트</b> — 개체를 눌러 끌어서 옮기고 모서리로 크기를 바꿔요. 속성에서 색·글자·순서를 고치고, 글상자·도형·이미지를 넣을 수 있어요.</p><p><b>PDF</b> — 글자와 그림(서명·도장)을 넣고, 쪽을 돌리거나 지우거나 순서를 바꿔요. 원래 있던 글자는 고칠 수 없어요.</p><p><b>워드(.docx)</b>는 보기 전용이에요. 옛날 형식(.ppt .doc)과 한글(.hwp)은 열 수 없어요.</p><p>파일은 서버로 보내지 않고 이 기기 안에서만 처리해요. 고친 파일은 오른쪽 위 내려받기로 저장하세요.</p><div class="row end"><button class="btn primary" data-a="y">확인</button></div>`;b.onclick=e=>{if(e.target.dataset.a)close(null)}});
+$('#helpBtn').onclick=()=>openSheet((b,close)=>{b.innerHTML=`<h3>사용법</h3><p><b>엑셀</b> — 셀을 누르고 위 입력줄에서 값이나 수식(=SUM 등)을 고쳐요. 원본 서식은 그대로 남아요.</p><p><b>파워포인트</b> — 개체를 눌러 끌어서 옮기고 모서리로 크기를 바꿔요. 속성에서 색·글자·순서를 고치고, 글상자·도형·이미지를 넣을 수 있어요.</p><p><b>PDF</b> — 글자와 그림(서명·도장)을 넣고, 가리기 상자로 원래 글자를 덮은 뒤 새 글자를 쓸 수 있어요. 쪽을 돌리거나 지우거나 순서를 바꿔요. 원래 있던 글자는 고칠 수 없어요.</p><p><b>워드(.docx)</b> — 문단을 눌러 바로 글자를 고치고, 아래 도구로 굵게·정렬·크기를 바꿔요. 머리글·각주는 보이지 않지만 저장할 때 그대로 남아요.</p><p>옛날 형식(.ppt .doc)과 한글(.hwp)은 열 수 없어요.</p><p>파일은 서버로 보내지 않고 이 기기 안에서만 처리해요. 고친 파일은 오른쪽 위 내려받기로 저장하세요.</p><div class="row end"><button class="btn primary" data-a="y">확인</button></div>`;b.onclick=e=>{if(e.target.dataset.a)close(null)}});
 $('#navHome').onclick=()=>$('#hscroll').scrollTo({top:0,behavior:'smooth'});
 $('#fabNew').onclick=()=>openSheet((b,close)=>{b.innerHTML=`<h3>새로 만들기</h3><button class="new-btn x" data-n="newSheet"><span class="ic">${ic('sheet',22)}</span><span><b>새 엑셀</b><small>빈 시트로 시작</small></span></button><button class="new-btn p" data-n="newDeck"><span class="ic">${ic('deck',22)}</span><span><b>새 PPT</b><small>16:9 빈 발표 자료</small></span></button>`;b.onclick=e=>{const n=e.target.closest('[data-n]');if(n){close(null);$('#'+n.dataset.n).click()}}});
 
@@ -627,7 +651,7 @@ async function saveToHandle(h,bytes){
 $('#saveBtn').onclick=async()=>{
   if(!doc)return;const d=doc;
   let where='copy';
-  if(d.handle&&d.kind!=='word'&&extOf(d.handle.name||'')===extOf(d.rec.name)){
+  if(d.handle&&extOf(d.handle.name||'')===extOf(d.rec.name)){
     where=await openSheet((b,close)=>{b.innerHTML=`<h3>어디에 저장할까요?</h3><p>원본에 저장하면 휴대폰에 있는 "${esc(d.handle.name)}" 파일이 고친 내용으로 바뀌어요.</p><div class="row end"><button class="btn" data-a="copy">사본으로 내려받기</button><button class="btn primary" data-a="orig">원본에 저장</button></div>`;b.onclick=e=>{const a=e.target.dataset.a;if(a)close(a)}});
     if(!where)return;
   }
@@ -641,7 +665,7 @@ $('#saveBtn').onclick=async()=>{
 let persistT;
 function markDirty(){doc.dirty=true;setTitle();clearTimeout(persistT);persistT=setTimeout(()=>persist(),1500)}
 async function persist(now){if(!doc||!doc.dirty)return;clearTimeout(persistT);try{const d=doc;const {bytes}=await buildFile();d.rec.buf=bytes;d.rec.updated=Date.now();await IDB.put({...d.rec})}catch(e){console.warn('autosave',e)}}
-async function buildFile(){if(doc.kind==='pdf')return buildPdfFile();if(doc.view)return{bytes:doc.rec.buf.slice(0),name:doc.rec.name};if(doc.kind==='sheet')return buildSheetFile();return buildDeckFile()}
+async function buildFile(){if(doc.kind==='pdf')return buildPdfFile();if(doc.kind==='word')return buildWordFile();if(doc.view)return{bytes:doc.rec.buf.slice(0),name:doc.rec.name};if(doc.kind==='sheet')return buildSheetFile();return buildDeckFile()}
 
 /* ========== 파일 열기 ========== */
 for(const inp of document.querySelectorAll('.file-in'))inp.onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)openFile(f)};
@@ -1035,7 +1059,7 @@ const relOfType=(part,suffix)=>{for(const id in part.rels)if(part.rels[id].type.
 
 async function openDeckDoc(rec){
   const zip=await JSZip.loadAsync(rec.buf);
-  doc={kind:'deck',rec,zip,parts:{},media:{},slides:[],cur:0,sel:null,dirty:false,undo:[],redo:[],showProps:false};
+  doc={kind:'deck',rec,zip,parts:{},media:{},slides:[],cur:0,sel:null,dirty:false,undo:[],redo:[],showProps:false,tool:'sel'};$('#slides').classList.remove('tooling');
   const pres=await loadPart('ppt/presentation.xml');
   const sz=pres.dom.getElementsByTagNameNS(PNS,'sldSz')[0];
   doc.cx=+(sz&&sz.getAttribute('cx'))||12192000;doc.cy=+(sz&&sz.getAttribute('cy'))||6858000;
@@ -1217,6 +1241,14 @@ function drawSp(e,d,ctx,x){
   if(fill&&fill!=='transparent')d.style.background=fill;
   const ln=lineOf(spPr,st,ctx);if(ln)d.style.border=`${ln.w}px ${/dot/i.test(ln.dash||'')&&!/dash/i.test(ln.dash)?'dotted':/dash/i.test(ln.dash||'')?'dashed':'solid'} ${ln.c}`;
   const shd=shadowOf(spPr,ctx);if(shd)d.style.boxShadow=shd;
+  const cg=spPr&&kid(spPr,'custGeom');
+  if(cg){let h='';for(const pa of cg.getElementsByTagNameNS(ANS,'path')){const pw=+pa.getAttribute('w')||x.cx||1,ph=+pa.getAttribute('h')||x.cy||1;let dd='';
+      for(const c of pa.children){const pt=[...c.getElementsByTagNameNS(ANS,'pt')].map(q=>`${+q.getAttribute('x')/pw*100} ${+q.getAttribute('y')/ph*100}`);
+        if(c.localName==='moveTo'&&pt[0])dd+='M'+pt[0];else if(c.localName==='lnTo'&&pt[0])dd+='L'+pt[0];else if(c.localName==='cubicBezTo'&&pt.length===3)dd+='C'+pt.join(' ');else if(c.localName==='quadBezTo'&&pt.length===2)dd+='Q'+pt.join(' ');else if(c.localName==='close')dd+='Z'}
+      const pf=pa.getAttribute('fill')==='none'||!fill||fill==='transparent'||!/^rgb/.test(fill)?'none':fill;
+      h+=`<path d="${dd}" fill="${pf}" stroke="${ln?ln.c:'none'}" stroke-width="${ln?ln.w:0}" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"${ln&&/dash/i.test(ln.dash||'')?` stroke-dasharray="${ln.w*4} ${ln.w*3}"`:ln&&/dot/i.test(ln.dash||'')?` stroke-dasharray="${ln.w} ${ln.w*2}"`:''}/>`}
+    d.style.background='';d.style.border='';d.style.boxShadow='';
+    const sv=el('div');sv.style.cssText='position:absolute;inset:0;pointer-events:none';sv.innerHTML=`<svg viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%" style="overflow:visible;display:block">${h}</svg>`;d.appendChild(sv)}
   const g=spPr&&kid(spPr,'prstGeom');const pr=g&&g.getAttribute('prst');
   if(pr==='ellipse')d.style.borderRadius='50%';else if(pr==='roundRect'||pr==='flowChartAlternateProcess'){const gd=g.getElementsByTagNameNS(ANS,'gd')[0],m=gd&&/val (\d+)/.exec(gd.getAttribute('fmla')||'');d.style.borderRadius=Math.min(x.cx,x.cy)*ctx.scale*(m?Math.min(50000,+m[1]):16667)/100000+'px'}
   else if(pr==='triangle')d.style.clipPath='polygon(50% 0,100% 100%,0 100%)';
@@ -1344,6 +1376,8 @@ function selectEl(i,node){const k=doc.slides[i].shapes.indexOf(node);const d=k>=
 slidesBox.addEventListener('pointerdown',e=>{
   if(!doc||doc.kind!=='deck')return;
   const sw=e.target.closest('.sw');if(sw)setCur(+sw.dataset.i);
+  if(doc.tool&&doc.tool!=='sel'){const sl=e.target.closest('.slide');if(!sl||!sw)return;e.preventDefault();try{sl.setPointerCapture(e.pointerId)}catch(_){}
+    const r=sl.getBoundingClientRect(),pv=el('div','mk');sl.appendChild(pv);drag={mk:true,i:+sw.dataset.i,r,pv,x0:e.clientX-r.left,y0:e.clientY-r.top,pts:[[e.clientX-r.left,e.clientY-r.top]]};return}
   const hd=e.target.closest('.hd'),d=e.target.closest('.shp.ed');
   if(!d){if(doc.sel){clearSel();updateDeckTools()}return}
   const i=+sw.dataset.i,k=+d.dataset.k;let fresh=false;
@@ -1352,6 +1386,7 @@ slidesBox.addEventListener('pointerdown',e=>{
   drag={d,i,k,fresh,h:hd?hd.dataset.h:null,ratio:doc.slides[i].shapes[k].localName==='pic',sx:e.clientX,sy:e.clientY,l:parseFloat(d.style.left),t:parseFloat(d.style.top),w:parseFloat(d.style.width),hh:parseFloat(d.style.height),moved:false};
 });
 slidesBox.addEventListener('pointermove',e=>{
+  if(drag&&drag.mk){moveMake(drag,e);return}
   if(!drag||drag.first)return;const g=drag,dx=e.clientX-g.sx,dy=e.clientY-g.sy;
   if(!g.moved&&Math.hypot(dx,dy)<4)return;g.moved=true;
   if(!g.h){g.d.style.left=g.l+dx+'px';g.d.style.top=g.t+dy+'px';return}
@@ -1363,12 +1398,13 @@ slidesBox.addEventListener('pointermove',e=>{
 });
 slidesBox.addEventListener('pointerup',e=>{
   if(!drag)return;const g=drag;drag=null;if(g.first)return;
+  if(g.mk){finishMake(g,e);return}
   if(g.moved){const sc=slideScale(),S=doc.slides[g.i],sh=S.shapes[g.k],st=g.d.style;snap(g.i);
     setBox(sh,S,{x:Math.round(parseFloat(st.left)/sc),y:Math.round(parseFloat(st.top)/sc),cx:Math.round(parseFloat(st.width)/sc),cy:Math.round(parseFloat(st.height)/sc)});
     rerenderSlide(g.i);markDirty()}
   else if(!g.fresh&&!g.h)editSelected(e.target,true);
 });
-slidesBox.addEventListener('pointercancel',()=>{if(drag&&!drag.first&&drag.moved)rerenderSlide(drag.i);drag=null});
+slidesBox.addEventListener('pointercancel',()=>{if(drag&&drag.mk)drag.pv.remove();else if(drag&&!drag.first&&drag.moved)rerenderSlide(drag.i);drag=null});
 function setBox(sh,s,b){
   let xf=xfrmOf(sh);
   if(!xf){const D=sh.ownerDocument,spPr=kid(sh,'spPr');if(!spPr)return;const xe=D.createElementNS(ANS,'a:xfrm');xe.appendChild(D.createElementNS(ANS,'a:off'));xe.appendChild(D.createElementNS(ANS,'a:ext'));spPr.insertBefore(xe,spPr.firstChild);xf={el:xe}}
@@ -1442,12 +1478,14 @@ function renderDeckTools(){updateDeckTools()}
 const isWide=()=>window.matchMedia('(min-width:900px)').matches;
 function updateDeckTools(){
   const t=$('#deckTools');if(!doc||doc.kind!=='deck')return;
+  const tool=doc.tool||'sel',st=SHAPE_TOOLS[tool],last=SHAPE_TOOLS[doc.lastShape||'rect'];
   const tb=(a,i,l,c='')=>`<button class="tb ${c}" data-t="${a}" title="${l}" aria-label="${l}">${ic(i,22)}<span>${l}</span></button>`;
   const dv='<span class="dv"></span>';
-  let h=tb('desel','pointer','선택','on');
+  let h=tb('tool:sel','pointer','선택 (V)',tool==='sel'?'on':'');
   if(doc.sel)h+=tb('props','sliders','디자인','pri m-only');
-  h+=tb('addT','type','글상자')+tb('shapes','shapes','도형','has')+`<label class="tb" title="이미지">${ic('image',22)}<span>이미지</span><input type="file" class="file-hit img-in" accept="image/png,image/jpeg,image/gif" aria-label="이미지 넣기"></label>`+tb('addTable','table','표');
-  if(doc.sel)h+=dv+tb('edit','pencil','글자 고치기')+tb('dupS','copy','복제')+tb('delS','trash','삭제');
+  h+=tb('tool:text','type','글상자 (T)',tool==='text'?'on':'')+tb('shapes',(st||last)[0],st?st[1]:'도형','has'+(st?' on':''))+tb('tool:pen','pen','펜 (P)',tool==='pen'?'on':'')+`<label class="tb" title="이미지">${ic('image',22)}<span>이미지</span><input type="file" class="file-hit img-in" accept="image/png,image/jpeg,image/gif" aria-label="이미지 넣기"></label>`+tb('addTable','table','표');
+  if(doc.sel)h+=dv+tb('edit','pencil','글자 고치기')+tb('copy','copy','복사')+tb('delS','trash','삭제');
+  else if(clip)h+=dv+tb('paste','addslide','붙여넣기');
   h+=dv+tb('undo','undo','실행 취소',doc.undo.length?'':'off')+tb('redo','redo','다시 실행',doc.redo.length?'':'off');
   if(!doc.sel)h+='<span class="dv m-only"></span>'+tb('props','layers','슬라이드','m-only');
   h+='<span class="sp"></span>'+`<button class="tb go" data-t="play" title="발표" aria-label="발표">${ic('play',16)}<span>발표</span></button>`;
@@ -1458,7 +1496,7 @@ document.addEventListener('pointerdown',e=>{if(!e.target.closest('#shapePop')&&!
 function shapePop(btn){
   if($('#shapePop')){closePop();return}
   const p=el('div','pop');p.id='shapePop';
-  p.innerHTML=[['addR','square','사각형'],['addRR','rrect','둥근 사각형'],['addO','circle','원'],['addTri','triangle','삼각형'],['addDia','diamond','마름모'],['addArrowS','arrowBig','화살표 도형'],0,['addLine','minus','선'],['addArrow','arrowR','화살표 선']].map(x=>x?`<button data-t="${x[0]}">${ic(x[1],18)}${x[2]}</button>`:'<hr>').join('');
+  p.innerHTML=Object.keys(SHAPE_TOOLS).map(k=>(k==='line'?'<hr>':'')+`<button data-t="tool:${k}">${ic(SHAPE_TOOLS[k][0],18)}${SHAPE_TOOLS[k][1]}</button>`).join('');
   document.body.appendChild(p);const r=btn.getBoundingClientRect();
   p.style.left=Math.max(8,Math.min(window.innerWidth-p.offsetWidth-8,r.left+r.width/2-p.offsetWidth/2))+'px';p.style.top=(r.top-p.offsetHeight-8)+'px';
   p.onclick=e=>{const b=e.target.closest('[data-t]');if(b){closePop();deckAct(b.dataset.t)}};
@@ -1481,6 +1519,9 @@ $('#deckTools').onclick=e=>{const a=e.target.closest('[data-t]');if(a&&doc)deckA
 $('#deckTools').addEventListener('change',e=>{if(e.target.classList.contains('img-in')){const f=e.target.files[0];e.target.value='';if(f&&doc)addImage(doc.cur,f)}});
 async function deckAct(t){
   if(!doc||doc.kind!=='deck')return;
+  if(t.startsWith('tool:')){const k=t.slice(5);if(SHAPE_TOOLS[k])doc.lastShape=k;if(k==='sel'&&doc.tool==='sel'&&doc.sel){clearSel();updateDeckTools();return}setTool(k);return}
+  if(t==='copy'){copySel(false);updateDeckTools();return}
+  if(t==='paste'){await pasteClip();return}
   if(t==='desel'){clearSel();updateDeckTools()}
   else if(t==='props'){doc.showProps=!doc.showProps;renderProps()}
   else if(t==='undo')undo(false);
@@ -1507,20 +1548,75 @@ async function deckAct(t){
   else if(t==='delSl'){if(doc.slides.length<2){toast('슬라이드가 하나뿐이라 지울 수 없어요');return}if(await ask(`${doc.cur+1}번 슬라이드를 지울까요?`,'내려받기 전까지는 원본 파일이 바뀌지 않아요.','지우기',true))deleteSlide(doc.cur)}
   else if(t==='play')startShow(doc.cur);
 }
-function addShape(i,kind){
+function addShape(i,kind,box){
   const s=doc.slides[i];doc.cur=i;snap(i);
   const D=s.part.dom,tree=D.getElementsByTagNameNS(PNS,'spTree')[0],id=maxId(D)+1;
-  const w=Math.round(doc.cx*.26),h=kind==='ellipse'?w:Math.round(doc.cy*.26),x=Math.round((doc.cx-w)/2),y=Math.round((doc.cy-h)/2);
+  const w=box?Math.round(box.cx):Math.round(doc.cx*.26),h=box?Math.round(box.cy):(kind==='ellipse'?w:Math.round(doc.cy*.26)),x=box?Math.round(box.x):Math.round((doc.cx-w)/2),y=box?Math.round(box.y):Math.round((doc.cy-h)/2);
   const xml=`<p:sp xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvSpPr><p:cNvPr id="${id}" name="Shape ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="${kind}"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="1F6FEB"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr rtlCol="0" anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:endParaRPr lang="ko-KR" altLang="en-US" sz="1800"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:endParaRPr></a:p></p:txBody></p:sp>`;
   const node=D.importNode(parseXml(xml).documentElement,true);tree.insertBefore(node,kid(tree,'extLst'));
   rerenderSlide(i);selectEl(i,node);markDirty();
 }
-function addLine(i,arrow){
+function addLine(i,arrow,box,fh,fv){
   const s=doc.slides[i];doc.cur=i;snap(i);
   const D=s.part.dom,tree=D.getElementsByTagNameNS(PNS,'spTree')[0],id=maxId(D)+1,w=Math.round(doc.cx*.4);
-  const xml=`<p:cxnSp xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvCxnSpPr><p:cNvPr id="${id}" name="Line ${id}"/><p:cNvCxnSpPr/><p:nvPr/></p:nvCxnSpPr><p:spPr><a:xfrm><a:off x="${Math.round((doc.cx-w)/2)}" y="${Math.round(doc.cy/2)}"/><a:ext cx="${w}" cy="0"/></a:xfrm><a:prstGeom prst="line"><a:avLst/></a:prstGeom><a:ln w="28575"><a:solidFill><a:srgbClr val="111111"/></a:solidFill>${arrow?'<a:tailEnd type="triangle"/>':''}</a:ln></p:spPr></p:cxnSp>`;
+  const b=box||{x:Math.round((doc.cx-w)/2),y:Math.round(doc.cy/2),cx:w,cy:0};
+  const xml=`<p:cxnSp xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvCxnSpPr><p:cNvPr id="${id}" name="Line ${id}"/><p:cNvCxnSpPr/><p:nvPr/></p:nvCxnSpPr><p:spPr><a:xfrm${fh?' flipH="1"':''}${fv?' flipV="1"':''}><a:off x="${Math.round(b.x)}" y="${Math.round(b.y)}"/><a:ext cx="${Math.round(b.cx)}" cy="${Math.round(b.cy)}"/></a:xfrm><a:prstGeom prst="line"><a:avLst/></a:prstGeom><a:ln w="28575"><a:solidFill><a:srgbClr val="111111"/></a:solidFill>${arrow?'<a:tailEnd type="triangle"/>':''}</a:ln></p:spPr></p:cxnSp>`;
   const node=D.importNode(parseXml(xml).documentElement,true);tree.insertBefore(node,kid(tree,'extLst'));
   rerenderSlide(i);selectEl(i,node);markDirty();
+}
+function addPen(i,pts){
+  const s=doc.slides[i],sc=slideScale();if(pts.length<2)return;doc.cur=i;snap(i);
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),x0=Math.min(...xs),y0=Math.min(...ys),W=Math.max(1,Math.round((Math.max(...xs)-x0)/sc)),H=Math.max(1,Math.round((Math.max(...ys)-y0)/sc));
+  const pt=p=>`<a:pt x="${Math.round((p[0]-x0)/sc)}" y="${Math.round((p[1]-y0)/sc)}"/>`;
+  const D=s.part.dom,tree=D.getElementsByTagNameNS(PNS,'spTree')[0],id=maxId(D)+1;
+  const xml=`<p:sp xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvSpPr><p:cNvPr id="${id}" name="Freeform ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${Math.round(x0/sc)}" y="${Math.round(y0/sc)}"/><a:ext cx="${W}" cy="${H}"/></a:xfrm><a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="0" t="0" r="r" b="b"/><a:pathLst><a:path w="${W}" h="${H}" fill="none"><a:moveTo>${pt(pts[0])}</a:moveTo>${pts.slice(1).map(p=>`<a:lnTo>${pt(p)}</a:lnTo>`).join('')}</a:path></a:pathLst></a:custGeom><a:noFill/><a:ln w="28575" cap="rnd"><a:solidFill><a:srgbClr val="111111"/></a:solidFill><a:round/></a:ln></p:spPr></p:sp>`;
+  const node=D.importNode(parseXml(xml).documentElement,true);tree.insertBefore(node,kid(tree,'extLst'));
+  rerenderSlide(i);selectEl(i,node);markDirty();
+}
+/* 도구 모드: 도형을 고른 뒤 슬라이드 위에서 끌어서 그린다 */
+const SHAPE_TOOLS={rect:['square','사각형'],roundRect:['rrect','둥근 사각형'],ellipse:['circle','원'],triangle:['triangle','삼각형'],diamond:['diamond','마름모'],rightArrow:['arrowBig','화살표 도형'],line:['minus','선'],arrow:['arrowR','화살표 선']};
+function setTool(t){if(!doc||doc.kind!=='deck')return;doc.tool=t;$('#slides').classList.toggle('tooling',t!=='sel');if(t!=='sel')clearSel();updateDeckTools();if(t!=='sel'&&t!=='text')toast(t==='pen'?'슬라이드 위에 손가락이나 마우스로 그리세요':'슬라이드 위에서 끌어서 그리세요',1800)}
+function finishMake(g,e){
+  const i=g.i,sc=slideScale(),t=doc.tool,x1=e.clientX-g.r.left,y1=e.clientY-g.r.top,dx=x1-g.x0,dy=y1-g.y0,small=Math.hypot(dx,dy)<6;
+  g.pv.remove();
+  if(t==='pen'){if(g.pts.length>2)addPen(i,g.pts)}
+  else if(t==='line'||t==='arrow'){if(small){const w=doc.cx*.3;addLine(i,t==='arrow',{x:g.x0/sc-w/2,y:g.y0/sc,cx:w,cy:0})}else addLine(i,t==='arrow',{x:Math.min(g.x0,x1)/sc,y:Math.min(g.y0,y1)/sc,cx:Math.abs(dx)/sc,cy:Math.abs(dy)/sc},dx<0,dy<0)}
+  else if(t==='text'){addTextBox(i,small?{x:Math.max(0,g.x0/sc-doc.cx*.2),y:Math.max(0,g.y0/sc-doc.cy*.07),cx:doc.cx*.4}:{x:Math.min(g.x0,x1)/sc,y:Math.min(g.y0,y1)/sc,cx:Math.abs(dx)/sc})}
+  else if(small){const w=doc.cx*.22,h=t==='ellipse'||t==='diamond'?w:doc.cy*.22;addShape(i,t,{x:g.x0/sc-w/2,y:g.y0/sc-h/2,cx:w,cy:h})}
+  else addShape(i,t,{x:Math.min(g.x0,x1)/sc,y:Math.min(g.y0,y1)/sc,cx:Math.max(Math.abs(dx),4)/sc,cy:Math.max(Math.abs(dy),4)/sc});
+  doc.tool='sel';$('#slides').classList.remove('tooling');updateDeckTools();
+}
+function moveMake(g,e){
+  const x1=e.clientX-g.r.left,y1=e.clientY-g.r.top,t=doc.tool;let sh;
+  if(t==='pen'){const l=g.pts[g.pts.length-1];if(Math.hypot(x1-l[0],y1-l[1])>=3)g.pts.push([x1,y1]);sh=`<polyline points="${g.pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`}
+  else if(t==='line'||t==='arrow')sh=`<line x1="${g.x0}" y1="${g.y0}" x2="${x1}" y2="${y1}" stroke="#0a66d8" stroke-width="2"/>`;
+  else{const x=Math.min(g.x0,x1),y=Math.min(g.y0,y1),w=Math.abs(x1-g.x0),h=Math.abs(y1-g.y0);sh=t==='ellipse'?`<ellipse cx="${x+w/2}" cy="${y+h/2}" rx="${w/2}" ry="${h/2}" fill="rgba(10,102,216,.15)" stroke="#0a66d8"/>`:`<rect x="${x}" y="${y}" width="${w}" height="${t==='text'?Math.max(h,2):h}" fill="rgba(10,102,216,.15)" stroke="#0a66d8"${t==='text'?' stroke-dasharray="4 3"':''}/>`}
+  g.pv.innerHTML=`<svg width="${g.r.width}" height="${g.r.height}" style="position:absolute;inset:0;overflow:visible">${sh}</svg>`;
+}
+/* 복사 · 붙여넣기 */
+let clip=null;
+function copySel(cutIt){
+  if(!doc.sel){clip={slide:doc.cur};toast(`${doc.cur+1}번 슬라이드를 복사했어요`);return}
+  const i=doc.sel.i,S=doc.slides[i],sh=S.shapes[doc.sel.k],rels={};
+  for(const b of sh.getElementsByTagNameNS(ANS,'blip')){const id=b.getAttributeNS(RNS,'embed'),r=id&&S.part.rels[id];if(r&&r.target)rels[id]={type:r.type,target:r.target}}
+  clip={xml:new XMLSerializer().serializeToString(sh),rels};
+  if(cutIt)deckAct('delS');else toast('복사했어요');
+}
+async function pasteClip(){
+  if(!clip)return;
+  if(clip.slide!=null){if(doc.slides[clip.slide])await insertSlide(doc.cur,true,clip.slide);return}
+  const i=doc.cur,S=doc.slides[i],D=S.part.dom,tree=D.getElementsByTagNameNS(PNS,'spTree')[0];snap(i);
+  const node=D.importNode(parseXml(clip.xml).documentElement,true);
+  const nv=node.getElementsByTagNameNS(PNS,'cNvPr')[0];if(nv)nv.setAttribute('id',maxId(D)+1);
+  const ph=phOf(node);if(ph)ph.parentNode.removeChild(ph);
+  for(const b of node.getElementsByTagNameNS(ANS,'blip')){const old=b.getAttributeNS(RNS,'embed'),info=clip.rels[old];if(!info)continue;
+    let rid=Object.keys(S.part.rels).find(k=>S.part.rels[k].target===info.target);
+    if(!rid){rid='rIdBo'+Date.now().toString(36)+(ridSeq++);if(!S.part.relsDom)S.part.relsDom=parseXml(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${RELNS}"/>`);const rel=S.part.relsDom.createElementNS(RELNS,'Relationship');rel.setAttribute('Id',rid);rel.setAttribute('Type',info.type);rel.setAttribute('Target','../'+info.target.replace(/^ppt\//,''));S.part.relsDom.documentElement.appendChild(rel);S.part.rels[rid]={type:info.type,target:info.target}}
+    b.setAttributeNS(RNS,'r:embed',rid)}
+  tree.insertBefore(node,kid(tree,'extLst'));
+  const x=xfrmOf(node);if(x)setBox(node,S,{x:x.x+Math.round(doc.cx*.02),y:x.y+Math.round(doc.cy*.03),cx:x.cx,cy:x.cy});
+  clip.xml=new XMLSerializer().serializeToString(node);
+  doc.sel=null;rerenderSlide(i);selectEl(i,node);markDirty();
 }
 function addTable(i,rows=3,cols=3){
   const s=doc.slides[i];doc.cur=i;snap(i);
@@ -1595,7 +1691,7 @@ function renderProps(){
   const act=(k,i,l)=>`<button class="pact" data-p="${k}" data-v="">${ic(i,16)}${l}</button>`;
   const num=(k,l,v)=>`<label class="pn"><span>${l}</span><input type="number" inputmode="decimal" data-p="${k}" value="${v}"></label>`;
   const sh=doc.sel&&doc.slides[doc.sel.i].shapes[doc.sel.k];
-  if(!sh){p.innerHTML=head('디자인',`슬라이드 ${doc.cur+1} / ${doc.slides.length}`)+`<div class="pg"><h4>배경</h4>${colorRow('slBg',false,'')}</div><div class="pg"><h4>슬라이드</h4><div class="pas">${act('slAdd','addslide','새 슬라이드')}${act('slDup','copy','복제')}${act('slUp','up','앞으로')}${act('slDown','down','뒤로')}${act('slDel','trash','삭제')}</div></div><div class="pg m-only"><h4>레이어</h4><div>${layersHtml()}</div></div><div class="pg w-only"><h4>단축키</h4><p>T 글상자 · R 사각형 · O 원 · L 선<br>Ctrl+Z 실행 취소 · Ctrl+Shift+Z 다시 실행<br>Ctrl+D 복제 · Delete 삭제<br>방향키 1px 이동 · Shift+방향키 10px<br>Enter 글자 고치기 · Esc 선택 해제</p></div>`;return}
+  if(!sh){p.innerHTML=head('디자인',`슬라이드 ${doc.cur+1} / ${doc.slides.length}`)+`<div class="pg"><h4>배경</h4>${colorRow('slBg',false,'')}</div><div class="pg"><h4>슬라이드</h4><div class="pas">${act('slAdd','addslide','새 슬라이드')}${act('slDup','copy','복제')}${act('slUp','up','앞으로')}${act('slDown','down','뒤로')}${act('slDel','trash','삭제')}</div></div><div class="pg m-only"><h4>레이어</h4><div>${layersHtml()}</div></div><div class="pg w-only"><h4>단축키</h4><p>V 선택 · T 글상자 · R 사각형 · O 원 · L 선 · P 펜<br>Ctrl+C 복사 · Ctrl+X 잘라내기 · Ctrl+V 붙여넣기<br>Ctrl+D 복제 · Delete 삭제 · Ctrl+S 저장<br>Ctrl+Z 실행 취소 · Ctrl+Shift+Z 다시 실행<br>Ctrl+B/I/U 굵게·기울임·밑줄<br>Ctrl+] 앞으로 · Ctrl+[ 뒤로 (Shift: 맨 앞·맨 뒤)<br>방향키 1px 이동 · Shift+방향키 10px<br>선택이 없을 때: ↑↓ 슬라이드 이동, Ctrl+C/V 슬라이드 복사<br>Enter 글자 고치기 · Esc 선택 해제</p></div>`;return}
   const S=doc.slides[doc.sel.i],x=resolvedXfrm(sh,S)||{x:0,y:0,cx:0,cy:0,rot:0},px=v=>Math.round(v/9525),isSp=sh.localName==='sp',isLn=sh.localName==='cxnSp',isPic=sh.localName==='pic';
   let h=head('디자인',{sp:'도형 · 글상자',pic:'그림',graphicFrame:'표',cxnSp:'선'}[sh.localName]||'개체');
   h+=`<div class="pg"><h4>위치</h4><div class="prow"><div class="seg">${sg('aL','','aL','왼쪽 맞춤')}${sg('aC','','aC','가로 가운데')}${sg('aR','','aR','오른쪽 맞춤')}</div><div class="seg">${sg('aT','','aT','위쪽 맞춤')}${sg('aM','','aM','세로 가운데')}${sg('aB','','aB','아래쪽 맞춤')}</div></div><div class="pgrid">${num('x','X',px(x.x))}${num('y','Y',px(x.y))}</div><div class="prow">${num('rot','회전°',Math.round((x.rot||0)/60000))}<div class="pbs">${bt('flipH','','flipH','좌우 뒤집기',x.flipH)}${bt('flipV','','flipV','상하 뒤집기',x.flipV)}</div></div></div>`;
@@ -1682,14 +1778,25 @@ propsEl.addEventListener('change',e=>{const k=e.target.dataset.p;if(k)applyProp(
 propsEl.addEventListener('click',e=>{const l=e.target.closest('[data-ly]');if(l){pickLayer(+l.dataset.ly);return}const b=e.target.closest('button[data-p]');if(b)applyProp(b.dataset.p,b.dataset.v)});
 propsEl.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT')e.target.blur()});
 /* PC 단축키 */
+document.addEventListener('keydown',e=>{if(doc&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();$('#saveBtn').click()}});
 document.addEventListener('keydown',e=>{
   if(!doc||doc.kind!=='deck'||$('#scrim').classList.contains('on')||$('#show').classList.contains('on'))return;
   const tg=e.target.tagName;if(/^(INPUT|TEXTAREA|SELECT)$/.test(tg))return;
   const m=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();
   if(m&&k==='z'){e.preventDefault();undo(e.shiftKey);return}
   if(m&&k==='y'){e.preventDefault();undo(true);return}
-  if(m&&k==='d'){if(doc.sel){e.preventDefault();deckAct('dupS')}return}
+  if(m&&k==='d'){e.preventDefault();deckAct(doc.sel?'dupS':'dupSl');return}
+  if(m&&k==='c'){e.preventDefault();copySel(false);updateDeckTools();return}
+  if(m&&k==='x'){if(doc.sel){e.preventDefault();copySel(true)}return}
+  if(m&&k==='v'){e.preventDefault();pasteClip();return}
+  if(m&&(k===']'||k==='[')){if(doc.sel){e.preventDefault();applyProp(k===']'?(e.shiftKey?'front':'fwd'):(e.shiftKey?'back':'bwd'),'')}return}
+  if(m&&(k==='b'||k==='i'||k==='u')){if(doc.sel){e.preventDefault();applyProp(k,'')}return}
   if(m||e.altKey)return;
+  if(k==='escape'&&doc.tool&&doc.tool!=='sel'){setTool('sel');return}
+  if(!doc.sel){
+    if(k==='arrowdown'||k==='pagedown'||k==='arrowup'||k==='pageup'){e.preventDefault();const j=Math.max(0,Math.min(doc.slides.length-1,doc.cur+(k==='arrowdown'||k==='pagedown'?1:-1)));setCur(j);const w=$(`#slides .sw[data-i="${j}"]`);if(w)w.scrollIntoView({block:'center'});return}
+    if((k==='delete'||k==='backspace')&&e.target.closest&&e.target.closest('.th')){e.preventDefault();deckAct('delSl');return}
+  }
   if(doc.sel){
     if(k==='delete'||k==='backspace'){e.preventDefault();deckAct('delS');return}
     if(k==='escape'){clearSel();updateDeckTools();return}
@@ -1698,12 +1805,12 @@ document.addEventListener('keydown',e=>{
     if(mv){e.preventDefault();const st=(e.shiftKey?10:1)*9525,i=doc.sel.i,S=doc.slides[i],sh=S.shapes[doc.sel.k],x=resolvedXfrm(sh,S);if(!x)return;snap(i);setBox(sh,S,{x:x.x+mv[0]*st,y:x.y+mv[1]*st,cx:x.cx,cy:x.cy});rerenderSlide(i);markDirty();return}
   }
   if(tg==='BUTTON')return;
-  if(k==='t'){e.preventDefault();deckAct('addT')}else if(k==='r')deckAct('addR');else if(k==='o')deckAct('addO');else if(k==='l')deckAct('addLine');
+  const tk={v:'sel',t:'text',r:'rect',o:'ellipse',l:'line',p:'pen'}[k];if(tk){e.preventDefault();deckAct('tool:'+tk)}
 });
-function addTextBox(i){
+function addTextBox(i,pos){
   const s=doc.slides[i];doc.cur=i;snap(i);
   const D=s.part.dom;const tree=D.getElementsByTagNameNS(PNS,'spTree')[0];const id=maxId(D)+1;
-  const w=Math.round(doc.cx*.6),h=Math.round(doc.cy*.14),x=Math.round((doc.cx-w)/2),y=Math.round((doc.cy-h)/2);
+  const w=pos&&pos.cx>doc.cx*.05?Math.round(pos.cx):Math.round(doc.cx*.6),h=Math.round(doc.cy*.14),x=pos?Math.round(pos.x):Math.round((doc.cx-w)/2),y=pos?Math.round(pos.y):Math.round((doc.cy-h)/2);
   const xml=`<p:sp xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvSpPr><p:cNvPr id="${id}" name="TextBox ${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr wrap="square" rtlCol="0"><a:spAutoFit/></a:bodyPr><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="ko-KR" altLang="en-US" sz="2800" dirty="0"/><a:t>새 글상자</a:t></a:r></a:p></p:txBody></p:sp>`;
   const node=D.importNode(parseXml(xml).documentElement,true);
   tree.insertBefore(node,kid(tree,'extLst'));
@@ -1714,13 +1821,13 @@ function addTextBox(i){
 function ctOverride(part,type){const o=doc.ct.createElementNS(CTNS,'Override');o.setAttribute('PartName','/'+part);o.setAttribute('ContentType',type);doc.ct.documentElement.appendChild(o)}
 function ctRemove(part){for(const o of [...doc.ct.getElementsByTagNameNS(CTNS,'Override')])if(o.getAttribute('PartName')==='/'+part)o.parentNode.removeChild(o)}
 let ridSeq=0;
-async function insertSlide(after,copy){
-  const src=doc.slides[after];const pres=doc.parts['ppt/presentation.xml'];
+async function insertSlide(after,copy,srcIdx){
+  const src=doc.slides[after],from=doc.slides[srcIdx==null?after:srcIdx]||src;const pres=doc.parts['ppt/presentation.xml'];
   let n=1;doc.zip.forEach(p=>{const m=/^ppt\/slides\/slide(\d+)\.xml$/.exec(p);if(m)n=Math.max(n,+m[1]+1)});
   for(const p in doc.parts){const m=/^ppt\/slides\/slide(\d+)\.xml$/.exec(p);if(m)n=Math.max(n,+m[1]+1)}
   const path=`ppt/slides/slide${n}.xml`;
   let xml,rels;
-  if(copy){xml=serXml(src.part.dom);const rd=src.part.relsDom?parseXml(serXml(src.part.relsDom)):null;if(rd){for(const r of [...rd.getElementsByTagNameNS(RELNS,'Relationship')])if(/\/notesSlide$/.test(r.getAttribute('Type')))r.parentNode.removeChild(r);rels=serXml(rd)}}
+  if(copy){xml=serXml(from.part.dom);const rd=from.part.relsDom?parseXml(serXml(from.part.relsDom)):null;if(rd){for(const r of [...rd.getElementsByTagNameNS(RELNS,'Relationship')])if(/\/notesSlide$/.test(r.getAttribute('Type')))r.parentNode.removeChild(r);rels=serXml(rd)}}
   else{xml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<p:sld xmlns:a="${ANS}" xmlns:r="${RNS}" xmlns:p="${PNS}"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
     const lt=src.layout?src.layout.path.replace(/^ppt\//,'../'):'../slideLayouts/slideLayout1.xml';
     rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="${RELNS}"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="${lt}"/></Relationships>`}
@@ -1812,13 +1919,13 @@ function pdfBar(){
   const tb=(a,i,l,c='')=>`<button class="tb ${c}" data-a="${a}" title="${l}" aria-label="${l}">${ic(i,22)}<span>${l}</span></button>`;
   const it=doc.psel&&doc.pages[doc.psel.idx]&&doc.pages[doc.psel.idx].items[doc.psel.k];
   if(it)b.innerHTML=(it.t==='text'?tb('edit','pencil','글자 고치기','pri'):'')+tb('del','trash','삭제')+tb('desel','x','해제')+'<span class="sp"></span>'+zoomHtml();
-  else b.innerHTML=tb('text','type','글자','pri')+`<label class="tb" title="그림·서명">${ic('image',22)}<span>그림·서명</span><input type="file" class="file-hit pimg-in" accept="image/png,image/jpeg" aria-label="그림 넣기"></label>`+'<span class="dv"></span>'+tb('rot','rotate','쪽 회전')+tb('up','up','앞으로')+tb('down','down','뒤로')+tb('delp','trash','쪽 삭제')+'<span class="sp"></span>'+zoomHtml();
+  else b.innerHTML=tb('text','type','글자','pri')+tb('box','square','가리기')+`<label class="tb" title="그림·서명">${ic('image',22)}<span>그림·서명</span><input type="file" class="file-hit pimg-in" accept="image/png,image/jpeg" aria-label="그림 넣기"></label>`+'<span class="dv"></span>'+tb('rot','rotate','쪽 회전')+tb('up','up','앞으로')+tb('down','down','뒤로')+tb('delp','trash','쪽 삭제')+'<span class="sp"></span>'+zoomHtml();
 }
 $('#pageBar').onclick=e=>{
   if(!doc)return;
   const d=e.target.closest('[data-z]');
-  if(d){doc.zoom=Math.min(3,Math.max(.5,doc.zoom+ +d.dataset.z*.25));if(doc.kind==='pdf')renderPdf();else if(doc.kind==='word'){$('#pages .paper').style.zoom=doc.zoom;pageBar('워드')}return}
-  const a=e.target.closest('[data-a]');if(a&&doc.kind==='pdf')pdfAct(a.dataset.a);
+  if(d){doc.zoom=Math.min(3,Math.max(.5,doc.zoom+ +d.dataset.z*.25));if(doc.kind==='pdf')renderPdf();else if(doc.kind==='word'){$('#pages .paper').style.zoom=doc.zoom;wordBar()}return}
+  const a=e.target.closest('[data-a]');if(a&&doc.kind==='pdf')pdfAct(a.dataset.a);else if(a&&doc.kind==='word')wordAct(a.dataset.a);
 };
 $('#pageBar').addEventListener('change',e=>{if(e.target.classList.contains('pimg-in')){const f=e.target.files[0];e.target.value='';if(f&&doc&&doc.kind==='pdf')pdfAddImage(f)}});
 async function openPdfDoc(rec){
@@ -1857,8 +1964,9 @@ function drawItems(d,P){
   const W=d.clientWidth,idx=+d.dataset.idx;
   P.items.forEach((it,k)=>{const e=el('div','pi');e.dataset.k=k;e.style.left=it.x*100+'%';e.style.top=it.y*100+'%';
     if(it.t==='text'){e.textContent=it.text;e.style.fontSize=it.fs*W+'px';e.style.color='#'+it.color;if(it.b)e.style.fontWeight='700'}
+    else if(it.t==='box'){e.classList.add('box');e.style.width=it.w*100+'%';e.style.height=it.hh*100+'%'}
     else{e.style.width=it.w*100+'%';const im=document.createElement('img');im.src=it.src;im.alt='';e.appendChild(im)}
-    if(doc.psel&&doc.psel.idx===idx&&doc.psel.k===k){e.classList.add('sel');if(it.t==='img'){const h=el('span','hd se');e.appendChild(h)}}
+    if(doc.psel&&doc.psel.idx===idx&&doc.psel.k===k){e.classList.add('sel');if(it.t!=='text'){const h=el('span','hd se');e.appendChild(h)}}
     d.appendChild(e)});
 }
 function curPaper(){const box=$('#pages'),br=box.getBoundingClientRect(),mid=br.top+br.height/2;let best=null,bd=1e9;for(const d of box.querySelectorAll('.paper')){const r=d.getBoundingClientRect(),dist=mid<r.top?r.top-mid:mid>r.bottom?mid-r.bottom:0;if(dist<bd){bd=dist;best=d}}return best}
@@ -1883,6 +1991,7 @@ function pdfTextDialog(it){
 async function pdfAct(a){
   const d=curPaper();if(!d)return;const idx=+d.dataset.idx,P=doc.pages[idx];
   if(a==='text'){const r=await pdfTextDialog(null);if(!r)return;const v=await pageW(P);const pos=placeAt(d);P.items.push({t:'text',...pos,...r,fs:r.pt/v});doc.psel={idx,k:P.items.length-1};redrawPaper(idx);markDirty()}
+  else if(a==='box'){const pos=placeAt(d);P.items.push({t:'box',...pos,w:.3,hh:.04});doc.psel={idx,k:P.items.length-1};redrawPaper(idx);markDirty();toast('지울 글자 위로 옮기고 모서리로 크기를 맞추세요',3500)}
   else if(a==='edit'){const s=doc.psel,it=doc.pages[s.idx].items[s.k];const r=await pdfTextDialog(it);if(!r)return;const v=await pageW(doc.pages[s.idx]);Object.assign(it,r,{fs:r.pt/v});redrawPaper(s.idx);markDirty()}
   else if(a==='del'){const s=doc.psel;doc.pages[s.idx].items.splice(s.k,1);doc.psel=null;redrawPaper(s.idx);markDirty()}
   else if(a==='desel'){const s=doc.psel;doc.psel=null;redrawPaper(s.idx)}
@@ -1908,12 +2017,12 @@ pagesBox.addEventListener('pointerdown',e=>{
   const d=pi.closest('.paper'),idx=+d.dataset.idx,k=+pi.dataset.k,hd=!!e.target.closest('.hd');let fresh=false,el2=pi;
   if(!(doc.psel&&doc.psel.idx===idx&&doc.psel.k===k)){const old=doc.psel;doc.psel={idx,k};if(old&&old.idx!==idx)redrawPaper(old.idx);redrawPaper(idx);fresh=true;el2=d.querySelector(`.pi[data-k="${k}"]`);if(e.pointerType==='touch'){pdrag=null;return}}
   e.preventDefault();try{el2.setPointerCapture(e.pointerId)}catch(_){}
-  pdrag={el:el2,d,idx,k,hd,fresh,sx:e.clientX,sy:e.clientY,l:el2.offsetLeft,t:el2.offsetTop,w:el2.offsetWidth,moved:false};
+  pdrag={el:el2,d,idx,k,hd,fresh,sx:e.clientX,sy:e.clientY,l:el2.offsetLeft,t:el2.offsetTop,w:el2.offsetWidth,h0:el2.offsetHeight,box:doc.pages[idx].items[k].t==='box',moved:false};
 });
 pagesBox.addEventListener('pointermove',e=>{const g=pdrag;if(!g)return;const dx=e.clientX-g.sx,dy=e.clientY-g.sy;if(!g.moved&&Math.hypot(dx,dy)<4)return;g.moved=true;
-  if(g.hd)g.el.style.width=Math.max(16,g.w+dx)+'px';else{g.el.style.left=g.l+dx+'px';g.el.style.top=g.t+dy+'px'}});
+  if(g.hd){g.el.style.width=Math.max(16,g.w+dx)+'px';if(g.box)g.el.style.height=Math.max(8,g.h0+dy)+'px'}else{g.el.style.left=g.l+dx+'px';g.el.style.top=g.t+dy+'px'}});
 pagesBox.addEventListener('pointerup',e=>{const g=pdrag;pdrag=null;if(!g)return;const it=doc.pages[g.idx].items[g.k];
-  if(g.moved){const W=g.d.clientWidth,H=g.d.clientHeight;if(g.hd)it.w=Math.min(1,g.el.offsetWidth/W);else{it.x=g.el.offsetLeft/W;it.y=g.el.offsetTop/H}redrawPaper(g.idx);markDirty()}
+  if(g.moved){const W=g.d.clientWidth,H=g.d.clientHeight;if(g.hd){it.w=Math.min(1,g.el.offsetWidth/W);if(g.box)it.hh=Math.min(1,g.el.offsetHeight/H)}else{it.x=g.el.offsetLeft/W;it.y=g.el.offsetTop/H}redrawPaper(g.idx);markDirty()}
   else if(!g.fresh&&it.t==='text')pdfAct('edit')});
 pagesBox.addEventListener('pointercancel',()=>{if(pdrag){const i=pdrag.idx;pdrag=null;redrawPaper(i)}});
 function textCanvas(it,DW){
@@ -1926,7 +2035,7 @@ function textCanvas(it,DW){
 async function buildPdfFile(){
   const edited=doc.pages.length!==doc.pdf.numPages||doc.pages.some((p,i)=>p.src!==i||p.rot||p.items.length);
   if(!edited)return{bytes:doc.orig.slice(0),name:doc.rec.name};
-  await loadLib(PDFLIB);const {PDFDocument,degrees}=window.PDFLib;
+  await loadLib(PDFLIB);const {PDFDocument,degrees,rgb}=window.PDFLib;
   const src=await PDFDocument.load(doc.orig.slice(0),{ignoreEncryption:true}),out=await PDFDocument.create();
   const copied=await out.copyPages(src,doc.pages.map(p=>p.src));
   for(let n=0;n<copied.length;n++){
@@ -1935,27 +2044,135 @@ async function buildPdfFile(){
     const {width:W,height:H}=pg.getSize(),DW=r%180?H:W,DH=r%180?W:H;
     for(const it of P.items){
       let img,w,h;
-      if(it.t==='text'){const c=textCanvas(it,DW);img=await out.embedPng(c.url);w=c.w;h=c.h}
+      if(it.t==='box'){w=it.w*DW;h=it.hh*DH}
+      else if(it.t==='text'){const c=textCanvas(it,DW);img=await out.embedPng(c.url);w=c.w;h=c.h}
       else{img=it.mime==='image/jpeg'?await out.embedJpg(it.src):await out.embedPng(it.src);w=it.w*DW;h=w*it.asp}
       const dx=it.x*DW,dy=it.y*DH+h;let x,y;
       if(r===0){x=dx;y=H-dy}else if(r===90){x=dy;y=dx}else if(r===180){x=W-dx;y=dy}else{x=W-dy;y=H-dx}
-      pg.drawImage(img,{x,y,width:w,height:h,rotate:degrees(r)});
+      if(it.t==='box')pg.drawRectangle({x,y,width:w,height:h,rotate:degrees(r),color:rgb(1,1,1)});else pg.drawImage(img,{x,y,width:w,height:h,rotate:degrees(r)});
     }
   }
   const u=await out.save();return{bytes:u.buffer.slice(u.byteOffset,u.byteOffset+u.byteLength),name:doc.rec.name};
 }
+const WNS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+const wk=(e,n)=>{if(!e)return null;for(const c of e.children)if(c.localName===n&&c.namespaceURI===WNS)return c;return null};
+const wval=e=>e?e.getAttributeNS(WNS,'val'):null;
+const wOn=(rPr,n)=>{const c=wk(rPr,n);if(!c)return false;const v=wval(c);return v!=='0'&&v!=='false'&&v!=='none'};
+function wRuns(p){const o=[];for(const c of p.children){if(c.namespaceURI!==WNS)continue;if(c.localName==='r')o.push(c);else if(['hyperlink','ins','smartTag'].includes(c.localName))for(const r of c.children)if(r.localName==='r'&&r.namespaceURI===WNS)o.push(r)}return o}
+function wText(p){let t='';for(const r of wRuns(p))for(const c of r.children){if(c.localName==='t')t+=c.textContent;else if(c.localName==='tab')t+='\t';else if(c.localName==='br'||c.localName==='cr')t+='\n'}return t}
+const wHasDrawing=p=>['drawing','pict','object'].some(n=>p.getElementsByTagNameNS(WNS,n).length>0);
 async function openWordDoc(rec){
-  await loadLib(MAMMOTH);
-  const r=await window.mammoth.convertToHtml({arrayBuffer:rec.buf.slice(0)});
-  const dom=new DOMParser().parseFromString(r.value,'text/html');
-  for(const x of dom.querySelectorAll('script,style,iframe,object,embed,link,meta'))x.remove();
-  for(const x of dom.querySelectorAll('*'))for(const a of [...x.attributes]){if(/^on/i.test(a.name))x.removeAttribute(a.name);else if((a.name==='href'||a.name==='src')&&/^\s*javascript:/i.test(a.value))x.removeAttribute(a.name)}
-  for(const a of dom.querySelectorAll('a[href]')){a.target='_blank';a.rel='noopener'}
-  doc={kind:'word',view:true,rec,zoom:1,dirty:false};
-  show('pageView');setTitle();
-  const box=$('#pages');box.innerHTML='';box.scrollTo(0,0);
-  const paper=el('div','paper word');paper.innerHTML=dom.body.innerHTML||'<p>내용이 없는 문서예요.</p>';box.appendChild(paper);
-  pageBar('워드');
+  const zip=await JSZip.loadAsync(rec.buf),f=zip.file('word/document.xml');if(!f)throw new Error('워드 문서 형식이 아니에요');
+  const dom=parseXml(await f.async('string')),wmedia={},rf=zip.file('word/_rels/document.xml.rels');
+  if(rf){const rd=parseXml(await rf.async('string'));for(const r of rd.getElementsByTagNameNS(RELNS,'Relationship')){
+    if(!/\/image$/.test(r.getAttribute('Type')||'')||r.getAttribute('TargetMode')==='External')continue;
+    const path=resolvePath('word/document.xml',r.getAttribute('Target')),zf=zip.file(path),mime={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',bmp:'image/bmp',webp:'image/webp',svg:'image/svg+xml'}[extOf(path)];
+    if(zf&&mime)wmedia[r.getAttribute('Id')]=URL.createObjectURL(new Blob([await zf.async('arraybuffer')],{type:mime}))}}
+  doc={kind:'word',rec,zip,wdom:dom,wmedia,wps:[],wcur:-1,zoom:1,dirty:false};
+  show('pageView');setTitle();renderWord();
+}
+function fillWp(d,p){
+  d.innerHTML='';const pPr=wk(p,'pPr'),jc=wval(wk(pPr,'jc')),st=wval(wk(pPr,'pStyle'))||'';
+  d.style.textAlign={center:'center',right:'right',end:'right',both:'justify',distribute:'justify'}[jc]||'';
+  const hm=/(?:heading|제목)\s*(\d)|^(\d)$/i.exec(st),lvl=hm?+(hm[1]||hm[2]):(/title/i.test(st)?0:null);
+  d.classList.toggle('wh',lvl!=null);d.style.fontSize=lvl!=null?[24,20,16,14,13,12][Math.min(lvl,5)]+'pt':'';
+  d.classList.toggle('wli',!!wk(pPr,'numPr'));
+  for(const r of wRuns(p)){
+    const rPr=wk(r,'rPr');let sp=null;
+    const span=()=>{if(sp)return sp;sp=document.createElement('span');if(wOn(rPr,'b'))sp.style.fontWeight='700';if(wOn(rPr,'i'))sp.style.fontStyle='italic';const deco=[];if(wOn(rPr,'u'))deco.push('underline');if(wOn(rPr,'strike'))deco.push('line-through');if(deco.length)sp.style.textDecoration=deco.join(' ');const col=wval(wk(rPr,'color'));if(col&&/^[0-9a-f]{6}$/i.test(col))sp.style.color='#'+col;const sz=+wval(wk(rPr,'sz'));if(sz)sp.style.fontSize=sz/2+'pt';d.appendChild(sp);return sp};
+    for(const c of r.children){
+      if(c.localName==='t')span().appendChild(document.createTextNode(c.textContent));
+      else if(c.localName==='tab')span().appendChild(document.createTextNode('\t'));
+      else if(c.localName==='br'||c.localName==='cr')span().appendChild(document.createElement('br'));
+      else if(c.localName==='drawing'){const bl=c.getElementsByTagNameNS(ANS,'blip')[0],u=bl&&doc.wmedia[bl.getAttributeNS(RNS,'embed')];if(u){const im=document.createElement('img');im.src=u;im.alt='';const ex=c.getElementsByTagNameNS('*','extent')[0];if(ex&&+ex.getAttribute('cx'))im.style.width=Math.round(+ex.getAttribute('cx')/9525)+'px';d.appendChild(im);sp=null}}
+    }
+  }
+  if(!d.childNodes.length)d.appendChild(document.createElement('br'));
+}
+function wWalk(parent,host){
+  for(const c of parent.children){if(c.namespaceURI!==WNS)continue;
+    if(c.localName==='p'){const d=el('div','wp');d.dataset.w=doc.wps.push(c)-1;fillWp(d,c);if(!wHasDrawing(c)){d.contentEditable='true';d.spellcheck=false}host.appendChild(d)}
+    else if(c.localName==='tbl'){const t=document.createElement('table');for(const tr of c.children){if(tr.localName!=='tr')continue;const r=document.createElement('tr');for(const tc of tr.children){if(tc.localName!=='tc')continue;const td=document.createElement('td'),gs=wval(wk(wk(tc,'tcPr'),'gridSpan'));if(gs)td.colSpan=+gs;wWalk(tc,td);r.appendChild(td)}t.appendChild(r)}host.appendChild(t)}
+    else if(c.localName==='sdt'){const sc=wk(c,'sdtContent');if(sc)wWalk(sc,host)}
+  }
+}
+function renderWord(keep){
+  const box=$('#pages'),st=keep?box.scrollTop:0;doc.wbusy=true;box.innerHTML='';doc.wps=[];
+  const paper=el('div','paper word');paper.style.zoom=doc.zoom;const body=doc.wdom.getElementsByTagNameNS(WNS,'body')[0];if(body)wWalk(body,paper);
+  if(!doc.wps.length)paper.innerHTML='<p>내용이 없는 문서예요.</p>';
+  box.appendChild(paper);box.scrollTop=st;doc.wbusy=false;wordBar();
+}
+function writeWp(p,text,rPr0){
+  const D=p.ownerDocument;let rPr=rPr0||null;
+  if(!rPr)for(const r of wRuns(p)){const x=wk(r,'rPr');if(x){rPr=x;break}}
+  if(!rPr){const x=wk(wk(p,'pPr'),'rPr');if(x)rPr=x}
+  rPr=rPr?rPr.cloneNode(true):null;
+  for(const c of [...p.children])if(!(c.namespaceURI===WNS&&c.localName==='pPr'))p.removeChild(c);
+  if(text==='')return;
+  const r=D.createElementNS(WNS,'w:r');if(rPr)r.appendChild(rPr);
+  text.split('\n').forEach((ln,i)=>{if(i)r.appendChild(D.createElementNS(WNS,'w:br'));ln.split('\t').forEach((pt,j)=>{if(j)r.appendChild(D.createElementNS(WNS,'w:tab'));if(pt!==''){const t=D.createElementNS(WNS,'w:t');t.setAttributeNS('http://www.w3.org/XML/1998/namespace','xml:space','preserve');t.textContent=pt;r.appendChild(t)}})});
+  p.appendChild(r);
+}
+const wpText=d=>d.innerText.replace(/ /g,' ').replace(/\n$/,'');
+function commitWp(d,quiet){
+  if(!doc||doc.kind!=='word'||doc.wbusy||d.contentEditable!=='true')return;const p=doc.wps[+d.dataset.w];if(!p)return;
+  const t=wpText(d);if(t===wText(p))return;writeWp(p,t);if(!quiet){markDirty();fillWp(d,p)}
+}
+function caretOff(d){const s=getSelection();if(!s.rangeCount)return null;const r=s.getRangeAt(0);if(!d.contains(r.endContainer))return null;const pre=r.cloneRange();pre.selectNodeContents(d);pre.setEnd(r.endContainer,r.endOffset);return{off:pre.toString().length,collapsed:r.collapsed}}
+function focusWp(i,off){
+  const d=$(`#pages .wp[data-w="${i}"]`);if(!d)return;d.focus();const s=getSelection(),r=document.createRange(),tw=document.createTreeWalker(d,NodeFilter.SHOW_TEXT);let n,rem=off;
+  while((n=tw.nextNode())){if(rem<=n.length){r.setStart(n,rem);r.collapse(true);s.removeAllRanges();s.addRange(r);return}rem-=n.length}
+  r.selectNodeContents(d);r.collapse(off===0);s.removeAllRanges();s.addRange(r);
+}
+pagesBox.addEventListener('focusin',e=>{if(!doc||doc.kind!=='word')return;const d=e.target.closest&&e.target.closest('.wp');if(d){doc.wcur=+d.dataset.w;wordBar()}});
+pagesBox.addEventListener('focusout',e=>{if(!doc||doc.kind!=='word')return;const d=e.target.closest&&e.target.closest('.wp');if(d)commitWp(d)});
+pagesBox.addEventListener('input',e=>{if(doc&&doc.kind==='word'&&e.target.closest&&e.target.closest('.wp'))markDirty()});
+pagesBox.addEventListener('keydown',e=>{
+  if(!doc||doc.kind!=='word'||e.isComposing)return;const d=e.target.closest&&e.target.closest('.wp');if(!d||d.contentEditable!=='true')return;
+  const p=doc.wps[+d.dataset.w];
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();const c=caretOff(d),text=wpText(d),off=c?Math.min(c.off,text.length):text.length;
+    let rPr=null;for(const r of wRuns(p)){const x=wk(r,'rPr');if(x){rPr=x.cloneNode(true);break}}
+    const p2=p.cloneNode(false);for(const at of [...p2.attributes])if(/paraId|textId/.test(at.name))p2.removeAttributeNode(at);
+    const pp=wk(p,'pPr');if(pp)p2.appendChild(pp.cloneNode(true));
+    doc.wbusy=true;writeWp(p,text.slice(0,off),rPr);writeWp(p2,text.slice(off),rPr);p.parentNode.insertBefore(p2,p.nextSibling);
+    markDirty();renderWord(true);focusWp(doc.wps.indexOf(p2),0);
+  }else if(e.key==='Backspace'){
+    const c=caretOff(d);if(!c||!c.collapsed||c.off!==0)return;const prev=p.previousElementSibling;
+    if(!prev||prev.localName!=='p'||prev.namespaceURI!==WNS||wHasDrawing(prev))return;
+    e.preventDefault();const a=wText(prev),b=wpText(d);doc.wbusy=true;writeWp(prev,a+b);p.parentNode.removeChild(p);
+    markDirty();renderWord(true);focusWp(doc.wps.indexOf(prev),a.length);
+  }
+});
+const RPR_ORDER=['rStyle','rFonts','b','bCs','i','iCs','caps','smallCaps','strike','dstrike','outline','shadow','emboss','imprint','noProof','snapToGrid','vanish','webHidden','color','spacing','w','kern','position','sz','szCs','highlight','u','effect','bdr','shd','fitText','vertAlign','rtl','cs','em','lang','eastAsianLayout','specVanish','oMath'];
+function setRProp(rPr,name,val){
+  for(const c of [...rPr.children])if(c.localName===name&&c.namespaceURI===WNS)rPr.removeChild(c);
+  const e=rPr.ownerDocument.createElementNS(WNS,'w:'+name);if(val!=null)e.setAttributeNS(WNS,'w:val',val);
+  const my=RPR_ORDER.indexOf(name);let before=null;for(const c of rPr.children){const k=RPR_ORDER.indexOf(c.localName);if(k>my||k<0){before=c;break}}rPr.insertBefore(e,before);
+}
+function wordBar(){
+  const b=$('#pageBar');if(!doc||doc.kind!=='word')return;b.className='tools';
+  const p=doc.wps[doc.wcur],r0=p&&wRuns(p)[0],rPr=r0&&wk(r0,'rPr'),jc=p&&wval(wk(wk(p,'pPr'),'jc'));
+  const tb=(a,i,l,on)=>`<button class="tb${on?' on':''}" data-a="${a}" title="${l}" aria-label="${l}">${ic(i,22)}<span>${l}</span></button>`;
+  b.innerHTML=tb('b','bold','굵게',wOn(rPr,'b'))+tb('i','italic','기울임',wOn(rPr,'i'))+tb('u','underline','밑줄',wOn(rPr,'u'))+'<span class="dv"></span>'+tb('jl','alignl','왼쪽',jc==='left'||jc==='start')+tb('jc','alignc','가운데',jc==='center')+tb('jr','alignr','오른쪽',jc==='right'||jc==='end')+'<span class="dv"></span>'+tb('sm','minus','글자 작게')+tb('sp','plus','글자 크게')+'<span class="sp"></span>'+zoomHtml();
+}
+function wordAct(a){
+  const p=doc.wps[doc.wcur],d=$(`#pages .wp[data-w="${doc.wcur}"]`);
+  if(!p||!d||d.contentEditable!=='true'){toast('먼저 고칠 문단을 눌러 주세요');return}
+  commitWp(d,true);const D=p.ownerDocument,runs=wRuns(p);
+  const rprOf=r=>{let x=wk(r,'rPr');if(!x){x=D.createElementNS(WNS,'w:rPr');r.insertBefore(x,r.firstChild)}return x};
+  if(a[0]==='j'){let pp=wk(p,'pPr');if(!pp){pp=D.createElementNS(WNS,'w:pPr');p.insertBefore(pp,p.firstChild)}for(const c of [...pp.children])if(c.localName==='jc')pp.removeChild(c);const e=D.createElementNS(WNS,'w:jc');e.setAttributeNS(WNS,'w:val',{jl:'left',jc:'center',jr:'right'}[a]);let before=null;for(const c of pp.children)if(['textDirection','textAlignment','textboxTightWrap','outlineLvl','divId','cnfStyle','rPr','sectPr','pPrChange'].includes(c.localName)){before=c;break}pp.insertBefore(e,before)}
+  else{if(!runs.length){toast('글자가 있는 문단에서 쓸 수 있어요');return}
+    const first=wk(runs[0],'rPr');
+    if(a==='b'||a==='i'){const on=wOn(first,a);for(const r of runs){const x=rprOf(r);setRProp(x,a,on?'0':null);setRProp(x,a+'Cs',on?'0':null)}}
+    else if(a==='u'){const on=wOn(first,'u');for(const r of runs)setRProp(rprOf(r),'u',on?'none':'single')}
+    else{const cur=+wval(wk(first,'sz'))/2||11,n=Math.max(6,Math.min(96,cur+(a==='sp'?1:-1)*(cur>=20?2:1)));for(const r of runs){const x=rprOf(r);setRProp(x,'sz',String(n*2));setRProp(x,'szCs',String(n*2))}}}
+  markDirty();fillWp(d,p);wordBar();
+}
+async function buildWordFile(){
+  const a=document.activeElement;if(a&&a.classList&&a.classList.contains('wp'))commitWp(a,true);
+  doc.zip.file('word/document.xml',serXml(doc.wdom));
+  return{bytes:await doc.zip.generateAsync({type:'arraybuffer',compression:'DEFLATE'}),name:doc.rec.name};
 }
 
 window.addEventListener('pagehide',()=>{if(doc&&doc.dirty)persist(true)});
@@ -1977,6 +2194,34 @@ if(topLevel&&'serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
   if(/[?&]shared=1/.test(location.search))takeShared();
 }
+/* 휴대폰 폴더 연결: 한 번 고른 폴더의 파일을 최근 순으로 보여 준다 (지원 브라우저만) */
+const dirOk=()=>topLevel&&typeof window.showDirectoryPicker==='function';
+let devDir=null,devFiles=[],devNeed=false;
+const DEV_EXT=['xlsx','xlsm','xls','csv','pptx','pdf','docx'];
+async function scanDir(dir,depth,out){for await(const [name,h] of dir.entries()){if(out.length>=400)return;if(h.kind==='file'){const ext=extOf(name);if(DEV_EXT.includes(ext)){try{const f=await h.getFile();out.push({name,h,t:f.lastModified,ext})}catch(e){}}}else if(depth>0){try{await scanDir(h,depth-1,out)}catch(e){}}}}
+function ago(t){const m=Math.floor((Date.now()-t)/60000);return m<1?'방금 전':m<60?m+'분 전':m<1440?Math.floor(m/60)+'시간 전':fmtDate(t)}
+function renderDev(){
+  const sec=$('#devSec');if(!dirOk()){sec.hidden=true;return}sec.hidden=false;
+  const box=$('#devList'),note=$('#devNote');$('#devRe').hidden=$('#devOff').hidden=!devDir||devNeed;
+  if(!devDir){$('#devH').textContent='휴대폰 폴더의 최근 파일';box.innerHTML=`<button class="qt" data-dv="pick" style="flex:1;flex-direction:row;min-height:56px">${ic('folder',22)}폴더 연결하기</button>`;note.textContent='카톡 파일이 있는 폴더(다운로드 › KakaoTalk)를 한 번 연결하면, 그 폴더의 파일이 최근 순으로 여기에 나와요. 다운로드 폴더 전체는 휴대폰이 막아 두어서 그 안의 폴더를 골라야 해요.';return}
+  $('#devH').textContent=`${devDir.name} 폴더의 최근 파일`;
+  if(devNeed){box.innerHTML=`<button class="qt" data-dv="grant" style="flex:1;flex-direction:row;min-height:56px">${ic('folder',22)}폴더 다시 연결</button>`;note.textContent='브라우저를 다시 열면 폴더 읽기 허용을 한 번 더 눌러야 해요.';return}
+  note.textContent='';
+  if(!devFiles.length){box.innerHTML='<div class="empty">이 폴더에 열 수 있는 파일이 없어요.</div>';return}
+  box.innerHTML=devFiles.slice(0,30).map((f,i)=>{const K=KINDS[{pptx:'deck',pdf:'pdf',docx:'word'}[f.ext]||'sheet'];return `<button class="rc" data-dv="open" data-i="${i}"><span class="ic ${K.c}">${ic(K.i,22)}</span><span class="nm"><b>${ago(f.t)}</b><small>${esc(f.name)}</small></span></button>`}).join('');
+}
+async function loadDev(){devFiles=[];try{await scanDir(devDir,2,devFiles)}catch(e){console.warn('scan',e)}devFiles.sort((a,b)=>b.t-a.t);renderDev()}
+$('#devSec').onclick=async e=>{
+  const b=e.target.closest('[data-dv]');if(!b)return;const a=b.dataset.dv;
+  try{
+    if(a==='pick'){devDir=await window.showDirectoryPicker({id:'baro-dir',mode:'read',startIn:'downloads'});devNeed=false;IDB.put({id:'__dir',h:devDir});$('#devList').innerHTML='<div class="empty">읽는 중…</div>';await loadDev()}
+    else if(a==='grant'){if(await devDir.requestPermission({mode:'read'})==='granted'){devNeed=false;await loadDev()}}
+    else if(a==='re')await loadDev();
+    else if(a==='off'){devDir=null;devFiles=[];IDB.del('__dir');renderDev()}
+    else if(a==='open'){const f=devFiles[+b.dataset.i];if(f)openFile(await f.h.getFile(),f.h)}
+  }catch(err){if(!err||err.name!=='AbortError'){console.warn('dir',err);toast('폴더를 열지 못했어요. 다운로드 안의 KakaoTalk 같은 하위 폴더를 골라 주세요.',4000)}}
+};
+(async()=>{if(!dirOk()){renderDev();return}try{const r=await IDB.get('__dir');if(r&&r.h){devDir=r.h;const q=devDir.queryPermission?await devDir.queryPermission({mode:'read'}):'granted';if(q==='granted'){await loadDev();return}devNeed=true}}catch(e){}renderDev()})();
 if(topLevel&&'launchQueue' in window)try{window.launchQueue.setConsumer(async p=>{if(p.files&&p.files[0])openFile(await p.files[0].getFile())})}catch(e){}
 </script>
 </body>
