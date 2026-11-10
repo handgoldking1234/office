@@ -432,6 +432,12 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
   .sw{scroll-snap-align:start}
   .props,.props.open{display:flex;position:static;flex:1;min-height:0;width:auto;max-height:none;border-radius:0;box-shadow:none;border-top:1px solid var(--line);background:var(--card);padding:0 14px 14px}
 }
+
+/* 저장 버튼: 상태가 보이게, 모바일에서도 글자 표시 */
+.bar #saveBtn{gap:6px}
+.bar #saveBtn.idle,.bar #saveBtn.done,.bar #saveBtn.auto{background:transparent;border-color:#6b7078;color:#fff}
+.bar #saveBtn.need{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 0 3px rgba(10,102,216,.35)}
+@media(max-width:899px){#saveBtn .lbl{display:inline}#saveBtn{width:auto;height:auto;padding:8px 14px}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -578,6 +584,7 @@ diamond:'<path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.4
 arrowR:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',arrowBig:'<path d="M6 9h6V5l7 7-7 7v-4H6z"/>',
 table:'<path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>',
 pen:'<path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z"/><path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18"/><path d="m2.3 2.3 7.286 7.286"/><circle cx="11" cy="11" r="2"/>',
+save:'<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>',check:'<path d="M20 6 9 17l-5-5"/>',
 front:'<rect x="8" y="8" width="8" height="8" rx="2"/><path d="M4 10a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2"/><path d="M14 20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2"/>'};
 function ic(n,sz=20){return `<svg class="lu" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`}
 for(const e of [...document.querySelectorAll('[data-ic]')])e.outerHTML=ic(e.dataset.ic,+e.dataset.s||20);
@@ -631,7 +638,7 @@ async function refreshRecent(){
 $('#fchips').onclick=e=>{const f=e.target.closest('[data-f]');if(!f)return;recentF=recentF===f.dataset.f?'all':f.dataset.f;refreshRecent()};
 $('#fAll').onclick=()=>{recentF='all';refreshRecent()};
 $('#q').oninput=()=>refreshRecent();
-$('#helpBtn').onclick=()=>openSheet((b,close)=>{b.innerHTML=`<h3>사용법</h3><p><b>엑셀</b> — 셀을 누르고 위 입력줄에서 값이나 수식(=SUM 등)을 고쳐요. 원본 서식은 그대로 남아요.</p><p><b>파워포인트</b> — 개체를 눌러 끌어서 옮기고 모서리로 크기를 바꿔요. 속성에서 색·글자·순서를 고치고, 글상자·도형·이미지를 넣을 수 있어요.</p><p><b>PDF</b> — 글자와 그림(서명·도장)을 넣고, 가리기 상자로 원래 글자를 덮은 뒤 새 글자를 쓸 수 있어요. 쪽을 돌리거나 지우거나 순서를 바꿔요. 원래 있던 글자는 고칠 수 없어요.</p><p><b>워드(.docx)</b> — 문단을 눌러 바로 글자를 고치고, 아래 도구로 굵게·정렬·크기를 바꿔요. 머리글·각주는 보이지 않지만 저장할 때 그대로 남아요.</p><p>옛날 형식(.ppt .doc)과 한글(.hwp)은 열 수 없어요.</p><p>파일은 서버로 보내지 않고 이 기기 안에서만 처리해요. 고친 파일은 오른쪽 위 내려받기로 저장하세요.</p><div class="row end"><button class="btn primary" data-a="y">확인</button></div>`;b.onclick=e=>{if(e.target.dataset.a)close(null)}});
+$('#helpBtn').onclick=()=>openSheet((b,close)=>{b.innerHTML=`<h3>사용법</h3><p><b>엑셀</b> — 셀을 누르고 위 입력줄에서 값이나 수식(=SUM 등)을 고쳐요. 원본 서식은 그대로 남아요.</p><p><b>파워포인트</b> — 개체를 눌러 끌어서 옮기고 모서리로 크기를 바꿔요. 속성에서 색·글자·순서를 고치고, 글상자·도형·이미지를 넣을 수 있어요.</p><p><b>PDF</b> — 글자와 그림(서명·도장)을 넣고, 가리기 상자로 원래 글자를 덮은 뒤 새 글자를 쓸 수 있어요. 쪽을 돌리거나 지우거나 순서를 바꿔요. 원래 있던 글자는 고칠 수 없어요.</p><p><b>워드(.docx)</b> — 문단을 눌러 바로 글자를 고치고, 아래 도구로 굵게·정렬·크기를 바꿔요. 머리글·각주는 보이지 않지만 저장할 때 그대로 남아요.</p><p>옛날 형식(.ppt .doc)과 한글(.hwp)은 열 수 없어요.</p><p>파일은 서버로 보내지 않고 이 기기 안에서만 처리해요. 고친 뒤에는 오른쪽 위 <b>저장</b> 버튼을 눌러 파일로 받으세요. 버튼이 파랗게 켜져 있으면 아직 파일로 저장하지 않은 거예요.</p><div class="row end"><button class="btn primary" data-a="y">확인</button></div>`;b.onclick=e=>{if(e.target.dataset.a)close(null)}});
 $('#navHome').onclick=()=>$('#hscroll').scrollTo({top:0,behavior:'smooth'});
 $('#fabNew').onclick=()=>openSheet((b,close)=>{b.innerHTML=`<h3>새로 만들기</h3><button class="new-btn x" data-n="newSheet"><span class="ic">${ic('sheet',22)}</span><span><b>새 엑셀</b><small>빈 시트로 시작</small></span></button><button class="new-btn p" data-n="newDeck"><span class="ic">${ic('deck',22)}</span><span><b>새 PPT</b><small>16:9 빈 발표 자료</small></span></button>`;b.onclick=e=>{const n=e.target.closest('[data-n]');if(n){close(null);$('#'+n.dataset.n).click()}}});
 
@@ -641,9 +648,9 @@ function getDownloads(){if(!dlPromise){dlPromise=(window.claude&&typeof window.c
 getDownloads();
 async function saveBytes(name,bytes){
   const dl=await Promise.race([getDownloads(),new Promise(r=>setTimeout(()=>r(undefined),1500))]);
-  if(dl){try{await dl.save({filename:name,data:new Blob([bytes])});toast('내려받기를 시작했어요');return}catch(e){if(e&&e.code==='declined')return;if(e&&e.code==='rate_limited'){toast('잠시 후 다시 눌러 주세요');return}}}
+  if(dl){try{await dl.save({filename:name,data:new Blob([bytes])});toast('파일로 저장했어요');return true}catch(e){if(e&&e.code==='declined')return;if(e&&e.code==='rate_limited'){toast('잠시 후 다시 눌러 주세요');return}}}
   try{const ext=extOf(name);const mime={xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',csv:'text/csv'}[ext]||'application/octet-stream';
-    const url=URL.createObjectURL(new Blob([bytes],{type:mime}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('내려받기를 시작했어요')}
+    const url=URL.createObjectURL(new Blob([bytes],{type:mime}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('파일로 저장했어요');return true}
   catch(e){toast('이 화면에서는 내려받기가 막혀 있어요')}
 }
 
@@ -655,7 +662,14 @@ function show(view){
   $('#backBtn').style.display=home?'none':'';$('#saveBtn').style.display=home?'none':'';
   if(home){$('#titleBtn').innerHTML='바로오피스<small>엑셀 · 파워포인트 열기와 수정</small>';doc=null;refreshRecent()}
 }
-function setTitle(){if(!doc)return;$('#titleBtn').innerHTML=`${esc(doc.rec.name)}<small id="stat">${KINDS[doc.kind].n} · ${doc.view?'보기 전용':doc.autoOrig?'원본 파일에 자동 저장 중':doc.dirty?'수정됨 · 이 기기에 자동 보관':'원본 그대로'}</small>`}
+function setTitle(){
+  if(!doc)return;
+  const st=doc.view?'보기 전용':doc.autoOrig?'원본 파일에 자동 저장 중':doc.unsaved?'수정됨 · 저장을 눌러 파일로 받으세요':doc.dirty?'파일로 저장됨':'원본 그대로';
+  $('#titleBtn').innerHTML=`${esc(doc.rec.name)}<small id="stat">${KINDS[doc.kind].n} · ${st}</small>`;
+  const sb=$('#saveBtn'),mode=doc.autoOrig?'auto':doc.unsaved?'need':doc.dirty?'done':'idle';
+  sb.className='btn primary '+mode;sb.title=sb.ariaLabel={auto:'원본에 자동 저장 중 (누르면 지금 저장)',need:'저장',done:'저장됨 (다시 저장)',idle:'저장'}[mode];
+  sb.innerHTML=ic(mode==='auto'||mode==='done'?'check':'save',18)+`<span class="lbl">${{auto:'자동 저장',need:'저장',done:'저장됨',idle:'저장'}[mode]}</span>`;
+}
 $('#backBtn').onclick=async()=>{if(doc&&doc.dirty)await persist(true);show('home')};
 $('#titleBtn').onclick=async()=>{if(!doc)return;const ext=extOf(doc.rec.name);const base=doc.rec.name.replace(/\.[^.]+$/,'');const v=await promptText('파일 이름 바꾸기',base);if(v&&v.trim()){doc.rec.name=v.trim()+'.'+ext;setTitle();persist(true)}};
 async function saveToHandle(h,bytes){
@@ -666,18 +680,18 @@ $('#saveBtn').onclick=async()=>{
   if(!doc)return;const d=doc;
   let where='copy';
   if(d.handle&&!d.autoOrig&&extOf(d.handle.name||'')===extOf(d.rec.name)){
-    where=await openSheet((b,close)=>{b.innerHTML=`<h3>어디에 저장할까요?</h3><p>원본에 저장하면 휴대폰에 있는 "${esc(d.handle.name)}" 파일이 고친 내용으로 바뀌어요.</p><div class="row end"><button class="btn" data-a="copy">사본으로 내려받기</button><button class="btn primary" data-a="orig">원본에 저장</button></div>`;b.onclick=e=>{const a=e.target.dataset.a;if(a)close(a)}});
+    where=await openSheet((b,close)=>{b.innerHTML=`<h3>어디에 저장할까요?</h3><p>원본에 저장하면 휴대폰에 있는 "${esc(d.handle.name)}" 파일이 고친 내용으로 바뀌어요.</p><div class="row end"><button class="btn" data-a="copy">사본으로 저장</button><button class="btn primary" data-a="orig">원본에 저장</button></div>`;b.onclick=e=>{const a=e.target.dataset.a;if(a)close(a)}});
     if(!where)return;
   }
   loading(true,'파일 만드는 중…');
   try{const {bytes,name}=await buildFile();loading(false);
-    if(where==='orig'){try{await saveToHandle(d.handle,bytes.slice(0));d.dirty=false;d.autoOrig=true;setTitle();toast('원본에 저장했어요. 이제 고칠 때마다 원본에 자동 저장돼요',3500);return}catch(e){console.warn('save orig',e);toast('원본에 저장하지 못해 사본으로 내려받아요',3000)}}
-    await saveBytes(name,bytes)}
+    if(where==='orig'){try{await saveToHandle(d.handle,bytes.slice(0));d.dirty=false;d.unsaved=false;d.autoOrig=true;setTitle();toast('원본에 저장했어요. 이제 고칠 때마다 원본에 자동 저장돼요',3500);return}catch(e){console.warn('save orig',e);toast('원본에 저장하지 못해 사본으로 내려받아요',3000)}}
+    if(await saveBytes(name,bytes)){d.unsaved=false;if(doc===d)setTitle()}}
   catch(e){loading(false);console.error(e);toast('저장 파일을 만들지 못했어요: '+(e.message||e))}
 };
 
 let persistT;
-function markDirty(){doc.dirty=true;setTitle();clearTimeout(persistT);persistT=setTimeout(()=>persist(),1500)}
+function markDirty(){doc.dirty=true;doc.unsaved=true;setTitle();clearTimeout(persistT);persistT=setTimeout(()=>persist(),1500)}
 async function persist(now){if(!doc||!doc.dirty)return;clearTimeout(persistT);try{const d=doc;const {bytes}=await buildFile();d.rec.buf=bytes;d.rec.updated=Date.now();await IDB.put({...d.rec});
   if(d.autoOrig&&d.handle){try{await saveToHandle(d.handle,bytes.slice(0))}catch(e){d.autoOrig=false;if(doc===d){setTitle();toast('원본 자동 저장이 끊겼어요. 저장 버튼을 눌러 다시 저장해 주세요',4000)}}}}catch(e){console.warn('autosave',e)}}
 async function buildFile(){if(doc.kind==='pdf')return buildPdfFile();if(doc.kind==='word')return buildWordFile();if(doc.view)return{bytes:doc.rec.buf.slice(0),name:doc.rec.name};if(doc.kind==='sheet')return buildSheetFile();return buildDeckFile()}
