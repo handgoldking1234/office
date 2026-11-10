@@ -4,8 +4,8 @@
   "description": "광고 없이 엑셀·PPT를 바로 열고 고치는 웹 오피스",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f3f5f4",
-  "theme_color": "#16804a",
+  "background_color": "#121212",
+  "theme_color": "#121212",
   "lang": "ko",
   "icons": [
     {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
