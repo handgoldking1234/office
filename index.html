@@ -342,6 +342,45 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
   #deckTools{background:var(--card);border:1px solid var(--line);box-shadow:0 8px 28px rgba(0,0,0,.18)}
   .props,.props.open{background:var(--card);box-shadow:none}
 }
+
+/* ===== 세부 설정: 왼쪽 패널(슬라이드·레이어) · 디자인 패널 ===== */
+[hidden]{display:none!important}
+.slides{align-items:safe center}
+.left{display:none;width:216px;flex:none;flex-direction:column;background:var(--raise);min-height:0}
+.lhead{display:flex;flex-direction:column;gap:8px;padding:10px;border-bottom:1px solid var(--line)}
+.lhead .btn{justify-content:center;border-radius:8px;padding:7px 10px;font-weight:500;font-size:13px}
+.left .thumbs{display:flex;width:auto;flex:1;min-height:0;background:transparent}
+.layers{flex:1;min-height:0;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:2px}
+.ly{display:flex;align-items:center;gap:8px;border:0;background:none;color:var(--ink);font-size:13px;padding:7px 8px;border-radius:6px;cursor:pointer;text-align:left;width:100%}
+.ly span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ly:hover{background:rgba(0,0,0,.05)}
+.ly.on{background:#dbe9fb;color:var(--accent)}
+.lyempty{font-size:12px;color:var(--sub);padding:10px 8px}
+@media(min-width:900px){.left{display:flex}}
+.seg{display:inline-flex;background:var(--bg);border-radius:8px;padding:2px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;border-radius:6px;min-width:34px;height:30px;padding:0 8px;display:grid;place-items:center;cursor:pointer;color:var(--ink);font-size:12px;white-space:nowrap}
+.seg button:hover{background:rgba(0,0,0,.05)}
+.seg button.on{background:var(--card);box-shadow:0 0 0 1px var(--line),0 1px 2px rgba(0,0,0,.08);color:var(--accent)}
+.seg.full{display:flex}.seg.full button{flex:1}
+.pg h4{color:var(--ink);font-weight:700}
+.ph .zoom span{min-width:44px}
+.ph .kind{font-size:12px;color:var(--sub);font-weight:400;margin-left:6px}
+.hexin{flex:none;width:112px}
+.hexin input{text-transform:uppercase;font-size:14px}
+.tb.on{background:var(--accent);color:#fff}
+.tb.on:hover{color:#fff}
+.pop{position:fixed;z-index:40;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.2);padding:6px;display:flex;flex-direction:column;min-width:170px}
+.pop button{display:flex;align-items:center;gap:10px;border:0;background:none;color:var(--ink);font-size:14px;padding:9px 10px;border-radius:8px;cursor:pointer;text-align:left}
+.pop button:hover{background:var(--raise)}
+
+/* 모바일: 글자 없이 아이콘만 */
+@media(max-width:899px){
+  #saveBtn .lbl,.tb span{display:none}
+  #saveBtn{padding:10px;width:42px;height:42px;justify-content:center}
+  .tb{min-width:46px;padding:11px 10px}
+  .tb.go{padding:11px 14px}
+  .tools{gap:0}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -351,7 +390,7 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
   <header class="bar">
     <button class="ib" id="backBtn" aria-label="홈으로" style="display:none"><i data-ic="back" data-s="24"></i></button>
     <button class="title" id="titleBtn">바로오피스<small>엑셀 · 파워포인트 열기와 수정</small></button>
-    <button class="btn primary" id="saveBtn" style="display:none"><i data-ic="download" data-s="18"></i>내려받기</button>
+    <button class="btn primary" id="saveBtn" style="display:none" aria-label="내려받기" title="내려받기"><i data-ic="download" data-s="18"></i><span class="lbl">내려받기</span></button>
   </header>
 
   <!-- 홈 -->
@@ -411,7 +450,14 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
   <!-- PPT -->
   <section class="view" id="deckView">
     <div class="dk">
-      <aside class="thumbs" id="thumbs" aria-label="슬라이드 목록"></aside>
+      <aside class="left" id="left">
+        <div class="lhead">
+          <button class="btn" id="lNew"><i data-ic="plus" data-s="16"></i>새 슬라이드</button>
+          <div class="seg full" id="ltabs"><button class="on" data-lt="s">슬라이드</button><button data-lt="l">레이어</button></div>
+        </div>
+        <div class="thumbs" id="thumbs" aria-label="슬라이드 목록"></div>
+        <div class="layers" id="layers" aria-label="레이어" hidden></div>
+      </aside>
       <div class="slides" id="slides"></div>
       <aside class="props" id="props" aria-label="속성"></aside>
     </div>
@@ -458,6 +504,19 @@ alignr:'<line x1="21" x2="3" y1="6" y2="6"/><line x1="21" x2="9" y1="12" y2="12"
 search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',chev:'<path d="m9 18 6-6-6-6"/>',
 help:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
 rotate:'<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+aL:'<rect width="9" height="6" x="6" y="14" rx="2"/><rect width="16" height="6" x="6" y="4" rx="2"/><path d="M2 2v20"/>',
+aC:'<path d="M12 2v20"/><path d="M8 10H4a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h4"/><path d="M16 10h4a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4"/><path d="M8 20H7a2 2 0 0 1-2-2v-2c0-1.1.9-2 2-2h1"/><path d="M16 14h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-1"/>',
+aR:'<rect width="16" height="6" x="2" y="4" rx="2"/><rect width="9" height="6" x="9" y="14" rx="2"/><path d="M22 22V2"/>',
+aT:'<rect width="6" height="16" x="4" y="6" rx="2"/><rect width="6" height="9" x="14" y="6" rx="2"/><path d="M22 2H2"/>',
+aM:'<path d="M2 12h20"/><path d="M10 16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/><path d="M10 8V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4"/><path d="M20 16v1a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-1"/><path d="M14 8V7c0-1.1.9-2 2-2h2a2 2 0 0 1 2 2v1"/>',
+aB:'<rect width="6" height="16" x="4" y="2" rx="2"/><rect width="6" height="9" x="14" y="9" rx="2"/><path d="M22 22H2"/>',
+flipH:'<path d="M8 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/><path d="M12 20v2"/><path d="M12 14v2"/><path d="M12 8v2"/><path d="M12 2v2"/>',
+flipV:'<path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3"/><path d="M4 12H2"/><path d="M10 12H8"/><path d="M16 12h-2"/><path d="M22 12h-2"/>',
+lock:'<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',unlock:'<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+pointer:'<path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/>',
+shapes:'<path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/>',
+triangle:'<path d="M13.73 4a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>',rrect:'<rect width="18" height="18" x="3" y="3" rx="6"/>',
+cup:'<path d="m18 15-6-6-6 6"/>',cdown:'<path d="m6 9 6 6 6-6"/>',
 front:'<rect x="8" y="8" width="8" height="8" rx="2"/><path d="M4 10a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2"/><path d="M14 20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2"/>'};
 function ic(n,sz=20){return `<svg class="lu" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`}
 for(const e of [...document.querySelectorAll('[data-ic]')])e.outerHTML=ic(e.dataset.ic,+e.dataset.s||20);
@@ -1005,7 +1064,7 @@ function fillOf(spPr,styleEl,ctx){
 }
 function lineOf(spPr,styleEl,ctx){
   const ln=spPr&&kid(spPr,'ln');
-  if(ln){if(kid(ln,'noFill'))return null;const w=Math.max(1,(+ln.getAttribute('w')||12700)*ctx.scale);const c=colorFrom(kid(ln,'solidFill'),ctx);if(c)return{w,c};}
+  if(ln){if(kid(ln,'noFill'))return null;const w=Math.max(1,(+ln.getAttribute('w')||12700)*ctx.scale);const c=colorFrom(kid(ln,'solidFill'),ctx);if(c){const pd=kid(ln,'prstDash');return{w,c,dash:pd?pd.getAttribute('val')||'':''}}}
   if(styleEl){const lr=kid(styleEl,'lnRef');if(lr&&+lr.getAttribute('idx')>0&&!(ln&&kid(ln,'noFill'))){const c=colorFrom(lr,ctx);if(c)return{w:Math.max(1,(ln&&+ln.getAttribute('w')||12700)*ctx.scale),c}}}
   return null;
 }
@@ -1032,7 +1091,7 @@ function xfrmOf(e){
 function resolvedXfrm(e,s){let x=xfrmOf(e);if(x)return x;const c=phChain(e,s);return(c.lay&&xfrmOf(c.lay))||(c.mas&&xfrmOf(c.mas))||null}
 
 /* 슬라이드 그리기 */
-function slideScale(){const w=$('#slides').clientWidth-24;return Math.min(w,980)/doc.cx}
+function slideScale(){const w=$('#slides').clientWidth-24;return Math.min(w,980)/doc.cx*(doc.dz||1)}
 function renderAllSlides(){
   const box=$('#slides');box.innerHTML='';const sc=slideScale();doc.sel=null;
   doc.slides.forEach((s,i)=>{const w=el('div','sw'+(i===doc.cur?' cur':''));w.dataset.i=i;w.innerHTML=`<div class="lbl"><span>${i+1} / ${doc.slides.length}</span></div>`;w.appendChild(drawSlide(s,sc,true));box.appendChild(w)});
@@ -1088,15 +1147,16 @@ function drawTree(part,ctx,box,tf,tree){
     box.appendChild(d);
   }
 }
+function shadowOf(spPr,ctx){const ef=spPr&&kid(spPr,'effectLst'),sh=ef&&kid(ef,'outerShdw');if(!sh)return'';const S=ctx.scale,dist=(+sh.getAttribute('dist')||0)*S,dir=(+sh.getAttribute('dir')||0)/60000*Math.PI/180,blur=(+sh.getAttribute('blurRad')||0)*S;return `${(dist*Math.cos(dir)).toFixed(1)}px ${(dist*Math.sin(dir)).toFixed(1)}px ${blur.toFixed(1)}px ${colorFrom(sh,ctx)||'rgba(0,0,0,.35)'}`}
 function drawPic(e,d,ctx){
   const bf=kid(e,'blipFill');const b=bf&&kid(bf,'blip');const id=b&&b.getAttributeNS(RNS,'embed');const t=id&&ctx.rels[id]&&ctx.rels[id].target;const u=t&&doc.media[t];
-  if(u){const im=document.createElement('img');im.src=u;im.alt='';d.appendChild(im)}else{d.style.background='repeating-linear-gradient(45deg,#eee 0 8px,#f6f6f6 8px 16px)';}
-  const sp=kid(e,'spPr');const g=sp&&kid(sp,'prstGeom');if(g&&g.getAttribute('prst')==='ellipse'){d.style.borderRadius='50%';d.style.overflow='hidden'}
+  if(u){const im=document.createElement('img');im.src=u;im.alt='';const am=kid(b,'alphaModFix');if(am)im.style.opacity=(+am.getAttribute('amt')||100000)/100000;d.appendChild(im)}else{d.style.background='repeating-linear-gradient(45deg,#eee 0 8px,#f6f6f6 8px 16px)';}
+  const sp=kid(e,'spPr');const shd=shadowOf(sp,ctx);if(shd)d.style.boxShadow=shd;const g=sp&&kid(sp,'prstGeom');if(g&&g.getAttribute('prst')==='ellipse'){d.style.borderRadius='50%';d.style.overflow='hidden'}
 }
 function drawLine(e,d,ctx,x){
   const ln=lineOf(kid(e,'spPr'),kid(e,'style'),ctx)||{w:1,c:'#000'};
   const W=Math.max(x.cx*ctx.scale,1),H=Math.max(x.cy*ctx.scale,1);
-  d.innerHTML=`<svg width="${W}" height="${H}" style="overflow:visible;position:absolute;inset:0"><line x1="0" y1="0" x2="${x.cx*ctx.scale}" y2="${x.cy*ctx.scale}" stroke="${ln.c}" stroke-width="${ln.w}"/></svg>`;
+  d.innerHTML=`<svg width="${W}" height="${H}" style="overflow:visible;position:absolute;inset:0"><line x1="0" y1="0" x2="${x.cx*ctx.scale}" y2="${x.cy*ctx.scale}" stroke="${ln.c}" stroke-width="${ln.w}"${/dot/i.test(ln.dash||'')&&!/dash/i.test(ln.dash)?` stroke-dasharray="${ln.w} ${ln.w*2}"`:/dash/i.test(ln.dash||'')?` stroke-dasharray="${ln.w*4} ${ln.w*3}"`:''}/><line x1="0" y1="0" x2="${x.cx*ctx.scale}" y2="${x.cy*ctx.scale}" stroke="transparent" stroke-width="18" style="pointer-events:stroke"/></svg>`;
 }
 function drawSp(e,d,ctx,x){
   const spPr=kid(e,'spPr'),st=kid(e,'style');
@@ -1104,9 +1164,10 @@ function drawSp(e,d,ctx,x){
   let fill=fillOf(spPr,st,ctx);
   if(fill==null&&c.lay)fill=fillOf(kid(c.lay,'spPr'),null,{...ctx,rels:ctx.s.layout.rels});
   if(fill&&fill!=='transparent')d.style.background=fill;
-  const ln=lineOf(spPr,st,ctx);if(ln)d.style.border=`${ln.w}px solid ${ln.c}`;
+  const ln=lineOf(spPr,st,ctx);if(ln)d.style.border=`${ln.w}px ${/dot/i.test(ln.dash||'')&&!/dash/i.test(ln.dash)?'dotted':/dash/i.test(ln.dash||'')?'dashed':'solid'} ${ln.c}`;
+  const shd=shadowOf(spPr,ctx);if(shd)d.style.boxShadow=shd;
   const g=spPr&&kid(spPr,'prstGeom');const pr=g&&g.getAttribute('prst');
-  if(pr==='ellipse')d.style.borderRadius='50%';else if(pr==='roundRect'||pr==='flowChartAlternateProcess')d.style.borderRadius=Math.min(x.cx,x.cy)*ctx.scale*.16+'px';
+  if(pr==='ellipse')d.style.borderRadius='50%';else if(pr==='roundRect'||pr==='flowChartAlternateProcess'){const gd=g.getElementsByTagNameNS(ANS,'gd')[0],m=gd&&/val (\d+)/.exec(gd.getAttribute('fmla')||'');d.style.borderRadius=Math.min(x.cx,x.cy)*ctx.scale*(m?Math.min(50000,+m[1]):16667)/100000+'px'}
   else if(pr==='triangle')d.style.clipPath='polygon(50% 0,100% 100%,0 100%)';
   else if(pr==='rightArrow')d.style.clipPath='polygon(0 25%,60% 25%,60% 0,100% 50%,60% 100%,60% 75%,0 75%)';
   else if(pr==='chevron')d.style.clipPath='polygon(0 0,75% 0,100% 50%,75% 100%,0 100%,25% 50%)';
@@ -1330,12 +1391,36 @@ function renderDeckTools(){updateDeckTools()}
 const isWide=()=>window.matchMedia('(min-width:900px)').matches;
 function updateDeckTools(){
   const t=$('#deckTools');if(!doc||doc.kind!=='deck')return;
-  const tb=(a,i,l,c='')=>`<button class="tb ${c}" data-t="${a}" title="${l}">${ic(i,22)}<span>${l}</span></button>`;
+  const tb=(a,i,l,c='')=>`<button class="tb ${c}" data-t="${a}" title="${l}" aria-label="${l}">${ic(i,22)}<span>${l}</span></button>`;
   const ur='<span class="dv"></span>'+tb('undo','undo','실행 취소',doc.undo.length?'':'off')+tb('redo','redo','다시 실행',doc.redo.length?'':'off');
-  if(doc.sel)t.innerHTML=tb('props','sliders','속성','pri m-only')+tb('edit','pencil','글자')+tb('dupS','copy','복제')+tb('front','front','맨 앞')+tb('back','back2','맨 뒤')+tb('delS','trash','삭제')+ur+'<span class="sp"></span>'+tb('desel','x','해제');
-  else t.innerHTML=tb('addT','type','글상자','pri')+tb('addR','square','사각형')+tb('addO','circle','원')+`<label class="tb" title="이미지">${ic('image',22)}<span>이미지</span><input type="file" class="file-hit img-in" accept="image/png,image/jpeg,image/gif" aria-label="이미지 넣기"></label>`+ur+'<span class="dv m-only"></span>'+tb('props','layers','슬라이드','m-only')+'<span class="sp"></span>'+`<button class="tb go" data-t="play">${ic('play',16)}발표</button>`;
-  renderProps();
+  if(doc.sel)t.innerHTML=tb('desel','pointer','선택','on')+tb('props','sliders','디자인','pri m-only')+tb('edit','pencil','글자')+tb('dupS','copy','복제')+tb('fwd','cup','앞으로')+tb('bwd','cdown','뒤로')+tb('delS','trash','삭제')+ur;
+  else t.innerHTML=tb('desel','pointer','선택','on')+tb('addT','type','글상자')+tb('shapes','shapes','도형')+`<label class="tb" title="이미지">${ic('image',22)}<span>이미지</span><input type="file" class="file-hit img-in" accept="image/png,image/jpeg,image/gif" aria-label="이미지 넣기"></label>`+ur+'<span class="dv m-only"></span>'+tb('props','layers','슬라이드','m-only')+'<span class="sp"></span>'+`<button class="tb go" data-t="play">${ic('play',16)}<span>발표</span></button>`;
+  renderProps();renderLayers();
 }
+function closePop(){const p=$('#shapePop');if(p)p.remove()}
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('#shapePop')&&!e.target.closest('[data-t="shapes"]'))closePop()});
+function shapePop(btn){
+  if($('#shapePop')){closePop();return}
+  const p=el('div','pop');p.id='shapePop';
+  p.innerHTML=[['addR','square','사각형'],['addRR','rrect','둥근 사각형'],['addO','circle','원'],['addTri','triangle','삼각형'],['addLine','minus','선']].map(([a,i,l])=>`<button data-t="${a}">${ic(i,18)}${l}</button>`).join('');
+  document.body.appendChild(p);const r=btn.getBoundingClientRect();
+  p.style.left=Math.max(8,Math.min(window.innerWidth-p.offsetWidth-8,r.left+r.width/2-p.offsetWidth/2))+'px';p.style.top=(r.top-p.offsetHeight-8)+'px';
+  p.onclick=e=>{const b=e.target.closest('[data-t]');if(b){closePop();deckAct(b.dataset.t)}};
+}
+function layersHtml(){
+  const i=doc.cur,S=doc.slides[i];if(!S||!S.shapes||!S.shapes.length)return '<div class="lyempty">이 슬라이드에는 개체가 없어요.</div>';
+  let h='';
+  for(let k=S.shapes.length-1;k>=0;k--){const sh=S.shapes[k],tbs=textBodies(sh),nv=sh.getElementsByTagNameNS(PNS,'cNvPr')[0];
+    let name=sh.localName==='graphicFrame'?'':(tbs[0]?readTb(tbs[0]).split('\n')[0].trim():'');if(!name)name=(nv&&nv.getAttribute('name'))||'개체';
+    const icn=sh.localName==='pic'?'image':sh.localName==='graphicFrame'?'sheet':sh.localName==='cxnSp'?'minus':(tbs[0]&&readTb(tbs[0]).trim()?'type':'square');
+    h+=`<button class="ly${doc.sel&&doc.sel.i===i&&doc.sel.k===k?' on':''}" data-ly="${k}">${ic(icn,16)}<span>${esc(name.slice(0,40))}</span></button>`}
+  return h;
+}
+function renderLayers(){const L=$('#layers');if(!doc||doc.kind!=='deck'||L.hidden||L.offsetParent===null)return;L.innerHTML=layersHtml()}
+function pickLayer(k){const i=doc.cur,S=doc.slides[i],node=S.shapes[k];if(!node)return;selectEl(i,node);const d=$('#slides .shp.sel');if(d)d.scrollIntoView({block:'nearest'})}
+$('#layers').onclick=e=>{const b=e.target.closest('[data-ly]');if(b&&doc)pickLayer(+b.dataset.ly)};
+$('#ltabs').onclick=e=>{const b=e.target.closest('[data-lt]');if(!b)return;const lay=b.dataset.lt==='l';for(const x of document.querySelectorAll('#ltabs button'))x.classList.toggle('on',x===b);$('#thumbs').hidden=lay;$('#layers').hidden=!lay;if(doc&&doc.kind==='deck'){if(lay)renderLayers();else renderThumbs()}};
+$('#lNew').onclick=()=>{if(doc&&doc.kind==='deck')deckAct('addSl')};
 $('#deckTools').onclick=e=>{const a=e.target.closest('[data-t]');if(a&&doc)deckAct(a.dataset.t)};
 $('#deckTools').addEventListener('change',e=>{if(e.target.classList.contains('img-in')){const f=e.target.files[0];e.target.value='';if(f&&doc)addImage(doc.cur,f)}});
 async function deckAct(t){
@@ -1348,6 +1433,11 @@ async function deckAct(t){
   else if(t==='delS'){if(!doc.sel)return;const i=doc.sel.i,sh=doc.slides[i].shapes[doc.sel.k];snap(i);sh.parentNode.removeChild(sh);doc.sel=null;rerenderSlide(i);markDirty()}
   else if(t==='dupS'){if(!doc.sel)return;const i=doc.sel.i,S=doc.slides[i],sh=S.shapes[doc.sel.k];snap(i);const x=resolvedXfrm(sh,S);const c=sh.cloneNode(true);const nv=c.getElementsByTagNameNS(PNS,'cNvPr')[0];if(nv)nv.setAttribute('id',maxId(S.part.dom)+1);const ph=phOf(c);if(ph)ph.parentNode.removeChild(ph);sh.parentNode.insertBefore(c,sh.nextSibling);if(x)setBox(c,S,{x:x.x+Math.round(doc.cx*.02),y:x.y+Math.round(doc.cy*.03),cx:x.cx,cy:x.cy});doc.sel=null;rerenderSlide(i);selectEl(i,c);markDirty()}
   else if(t==='front'||t==='back'){if(!doc.sel)return;const i=doc.sel.i,sh=doc.slides[i].shapes[doc.sel.k],tree=sh.parentNode;snap(i);if(t==='front')tree.insertBefore(sh,kid(tree,'extLst'));else{const first=[...tree.children].find(c=>!['nvGrpSpPr','grpSpPr'].includes(c.localName));if(first!==sh)tree.insertBefore(sh,first)}rerenderSlide(i);markDirty()}
+  else if(t==='shapes')shapePop($('#deckTools [data-t="shapes"]'));
+  else if(t==='fwd'||t==='bwd'){if(doc.sel)applyProp(t,'')}
+  else if(t==='addRR')addShape(doc.cur,'roundRect');
+  else if(t==='addTri')addShape(doc.cur,'triangle');
+  else if(t==='addLine')addLine(doc.cur);
   else if(t==='addT')addTextBox(doc.cur);
   else if(t==='addR')addShape(doc.cur,'rect');
   else if(t==='addO')addShape(doc.cur,'ellipse');
@@ -1362,6 +1452,13 @@ function addShape(i,kind){
   const D=s.part.dom,tree=D.getElementsByTagNameNS(PNS,'spTree')[0],id=maxId(D)+1;
   const w=Math.round(doc.cx*.26),h=kind==='ellipse'?w:Math.round(doc.cy*.26),x=Math.round((doc.cx-w)/2),y=Math.round((doc.cy-h)/2);
   const xml=`<p:sp xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvSpPr><p:cNvPr id="${id}" name="Shape ${id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="${kind}"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="1F6FEB"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr rtlCol="0" anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:endParaRPr lang="ko-KR" altLang="en-US" sz="1800"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:endParaRPr></a:p></p:txBody></p:sp>`;
+  const node=D.importNode(parseXml(xml).documentElement,true);tree.insertBefore(node,kid(tree,'extLst'));
+  rerenderSlide(i);selectEl(i,node);markDirty();
+}
+function addLine(i){
+  const s=doc.slides[i];doc.cur=i;snap(i);
+  const D=s.part.dom,tree=D.getElementsByTagNameNS(PNS,'spTree')[0],id=maxId(D)+1,w=Math.round(doc.cx*.4);
+  const xml=`<p:cxnSp xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvCxnSpPr><p:cNvPr id="${id}" name="Line ${id}"/><p:cNvCxnSpPr/><p:nvPr/></p:nvCxnSpPr><p:spPr><a:xfrm><a:off x="${Math.round((doc.cx-w)/2)}" y="${Math.round(doc.cy/2)}"/><a:ext cx="${w}" cy="0"/></a:xfrm><a:prstGeom prst="line"><a:avLst/></a:prstGeom><a:ln w="28575"><a:solidFill><a:srgbClr val="111111"/></a:solidFill></a:ln></p:spPr></p:cxnSp>`;
   const node=D.importNode(parseXml(xml).documentElement,true);tree.insertBefore(node,kid(tree,'extLst'));
   rerenderSlide(i);selectEl(i,node);markDirty();
 }
@@ -1390,24 +1487,56 @@ const SW=['FFFFFF','000000','6B7280','E11D48','F59E0B','1ED760','1F6FEB','7C3AED
 const textBodies=sh=>sh.localName==='graphicFrame'?[...sh.getElementsByTagNameNS(ANS,'txBody')]:(kid(sh,'txBody')?[kid(sh,'txBody')]:[]);
 function curPt(tb){const r=tb.getElementsByTagNameNS(ANS,'rPr')[0]||tb.getElementsByTagNameNS(ANS,'endParaRPr')[0];if(r&&r.getAttribute('sz'))return +r.getAttribute('sz')/100;const sp=document.querySelector('#slides .shp.sel .tx span');return sp?Math.round(parseFloat(sp.style.fontSize)/(EMU_PT*slideScale())):18}
 function lineW(sh){const ln=kid(kid(sh,'spPr'),'ln');return ln&&ln.getAttribute('w')?Math.round(+ln.getAttribute('w')/12700*10)/10:1}
-function colorRow(key,none){return `<div class="sws">${none?`<button class="swc none" data-p="${key}" data-v="" title="없음" aria-label="없음"></button>`:''}${SW.map(c=>`<button class="swc" data-p="${key}" data-v="${c}" style="background:#${c}" title="#${c}" aria-label="#${c}"></button>`).join('')}<label class="swc pick" title="직접 고르기"><input type="color" data-p="${key}" aria-label="색 직접 고르기"></label></div>`}
+function colorRow(key,none,cur){return `<div class="sws">${none?`<button class="swc none" data-p="${key}" data-v="" title="없음" aria-label="없음"></button>`:''}${SW.map(c=>`<button class="swc${cur===c?' on':''}" data-p="${key}" data-v="${c}" style="background:#${c}" title="#${c}" aria-label="#${c}"></button>`).join('')}<label class="swc pick" title="직접 고르기"><input type="color" data-p="${key}" aria-label="색 직접 고르기"></label></div><label class="pn hexin"><span>#</span><input type="text" maxlength="7" data-p="${key}" value="${cur||''}" placeholder="RRGGBB" aria-label="색상 코드" autocapitalize="characters" spellcheck="false"></label>`}
+const spPrOf=sh=>kid(sh,'spPr');
+const hexOf=el=>{const f=el&&kid(el,'solidFill'),c=f&&kid(f,'srgbClr');return c?(c.getAttribute('val')||'').toUpperCase():''};
+function getOpacity(sh){
+  if(sh.localName==='pic'){const b=sh.getElementsByTagNameNS(ANS,'blip')[0],a=b&&kid(b,'alphaModFix');return a?Math.round(+a.getAttribute('amt')/1000):100}
+  const f=kid(spPrOf(sh),'solidFill'),c=f&&f.firstElementChild,a=c&&kid(c,'alpha');return a?Math.round(+a.getAttribute('val')/1000):100;
+}
+function setOpacity(sh,pct){
+  const D=sh.ownerDocument;pct=Math.max(0,Math.min(100,pct));
+  if(sh.localName==='pic'){const b=sh.getElementsByTagNameNS(ANS,'blip')[0];if(!b)return false;for(const a of kids(b,'alphaModFix'))b.removeChild(a);if(pct<100){const a=D.createElementNS(ANS,'a:alphaModFix');a.setAttribute('amt',Math.round(pct*1000));b.insertBefore(a,b.firstChild)}return true}
+  const f=kid(spPrOf(sh),'solidFill'),c=f&&f.firstElementChild;if(!c)return false;
+  for(const a of kids(c,'alpha'))c.removeChild(a);if(pct<100){const a=D.createElementNS(ANS,'a:alpha');a.setAttribute('val',Math.round(pct*1000));c.appendChild(a)}return true;
+}
+const isRect=sh=>{const g=kid(spPrOf(sh),'prstGeom'),p=g&&g.getAttribute('prst');return sh.localName==='sp'&&(p==='rect'||p==='roundRect')};
+function getRadius(sh,x){const g=kid(spPrOf(sh),'prstGeom');if(!g||g.getAttribute('prst')!=='roundRect')return 0;const gd=g.getElementsByTagNameNS(ANS,'gd')[0],m=gd&&/val (\d+)/.exec(gd.getAttribute('fmla')||'');return Math.round(Math.min(x.cx,x.cy)*(m?+m[1]:16667)/100000/9525)}
+function setRadius(sh,x,px){const D=sh.ownerDocument,g=kid(spPrOf(sh),'prstGeom');if(!g)return;const adj=Math.max(0,Math.min(50000,Math.round(px*9525/Math.max(1,Math.min(x.cx,x.cy))*100000)));g.setAttribute('prst',adj?'roundRect':'rect');let av=kid(g,'avLst');if(!av){av=D.createElementNS(ANS,'a:avLst');g.appendChild(av)}while(av.firstChild)av.removeChild(av.firstChild);if(adj){const gd=D.createElementNS(ANS,'a:gd');gd.setAttribute('name','adj');gd.setAttribute('fmla','val '+adj);av.appendChild(gd)}}
+const SHD={s:[38100,19050],m:[101600,38100],l:[190500,76200]};
+function getShadow(sh){const ef=kid(spPrOf(sh),'effectLst'),o=ef&&kid(ef,'outerShdw');if(!o)return'';const b=+o.getAttribute('blurRad')||0;return b<=60000?'s':b<=140000?'m':'l'}
+function setShadow(sh,lv){
+  const D=sh.ownerDocument,sp=spPrOf(sh);for(const e of kids(sp,'effectLst'))sp.removeChild(e);for(const e of kids(sp,'effectDag'))sp.removeChild(e);
+  const ef=D.createElementNS(ANS,'a:effectLst');
+  if(SHD[lv]){const o=D.createElementNS(ANS,'a:outerShdw');o.setAttribute('blurRad',SHD[lv][0]);o.setAttribute('dist',SHD[lv][1]);o.setAttribute('dir','5400000');o.setAttribute('algn','t');o.setAttribute('rotWithShape','0');const c=D.createElementNS(ANS,'a:srgbClr');c.setAttribute('val','000000');const a=D.createElementNS(ANS,'a:alpha');a.setAttribute('val','35000');c.appendChild(a);o.appendChild(c);ef.appendChild(o)}
+  let before=null;for(const x of sp.children)if(['scene3d','sp3d','extLst'].includes(x.localName)){before=x;break}sp.insertBefore(ef,before);
+}
+function getDash(sh){const ln=kid(spPrOf(sh),'ln'),d=ln&&kid(ln,'prstDash'),v=d?d.getAttribute('val')||'':'';return /dash/i.test(v)?'dash':/dot/i.test(v)?'dot':'solid'}
+function getLs(tb){const p=tb.getElementsByTagNameNS(ANS,'pPr')[0],l=p&&kid(p,'lnSpc'),c=l&&kid(l,'spcPct');return c?Math.round(+c.getAttribute('val')/1000):100}
+function setLs(tb,pct){const D=tb.ownerDocument;for(const p of kids(tb,'p')){let pp=kid(p,'pPr');if(!pp){pp=D.createElementNS(ANS,'a:pPr');p.insertBefore(pp,p.firstChild)}for(const l of kids(pp,'lnSpc'))pp.removeChild(l);const l=D.createElementNS(ANS,'a:lnSpc'),c=D.createElementNS(ANS,'a:spcPct');c.setAttribute('val',Math.round(pct*1000));l.appendChild(c);pp.insertBefore(l,pp.firstChild)}}
 function renderProps(){
   const p=$('#props');if(!doc||doc.kind!=='deck')return;
   p.classList.toggle('open',!!doc.showProps);
   if(!isWide()&&!doc.showProps){p.innerHTML='';return}
-  const head=t=>`<div class="ph"><b>${t}</b><button class="ib m-only" data-p="close" data-v="" aria-label="닫기">${ic('x',18)}</button></div>`;
+  const head=(t,sub)=>`<div class="ph"><b>${t}${sub?`<span class="kind">${sub}</span>`:''}</b><div class="zoom"><button class="ib" data-p="zoom" data-v="-1" aria-label="축소">${ic('minus',16)}</button><span>${Math.round((doc.dz||1)*100)}%</span><button class="ib" data-p="zoom" data-v="1" aria-label="확대">${ic('plus',16)}</button><button class="ib m-only" data-p="close" data-v="" aria-label="닫기">${ic('x',18)}</button></div></div>`;
   const bt=(k,v,i,l,on)=>`<button class="pb${on?' on':''}" data-p="${k}" data-v="${v}" title="${l}" aria-label="${l}" aria-pressed="${!!on}">${ic(i,18)}</button>`;
+  const sg=(k,v,i,l,on)=>`<button class="${on?'on':''}" data-p="${k}" data-v="${v}" title="${l}" aria-label="${l}">${i.length<8&&IC[i]?ic(i,16):i}</button>`;
   const act=(k,i,l)=>`<button class="pact" data-p="${k}" data-v="">${ic(i,16)}${l}</button>`;
   const num=(k,l,v)=>`<label class="pn"><span>${l}</span><input type="number" inputmode="decimal" data-p="${k}" value="${v}"></label>`;
   const sh=doc.sel&&doc.slides[doc.sel.i].shapes[doc.sel.k];
-  if(!sh){p.innerHTML=head(`슬라이드 ${doc.cur+1} / ${doc.slides.length}`)+`<div class="pg"><h4>배경색</h4>${colorRow('slBg')}</div><div class="pg"><h4>슬라이드</h4><div class="pas">${act('slAdd','addslide','새 슬라이드')}${act('slDup','copy','복제')}${act('slUp','up','앞으로')}${act('slDown','down','뒤로')}${act('slDel','trash','삭제')}</div></div><div class="pg w-only"><h4>단축키</h4><p>T 글상자 · R 사각형 · O 원<br>Ctrl+Z 실행 취소 · Ctrl+Shift+Z 다시 실행<br>Ctrl+D 복제 · Delete 삭제<br>방향키 1px 이동 · Shift+방향키 10px<br>Enter 글자 고치기 · Esc 선택 해제</p></div><div class="pg"><p>개체를 누르면 위치·크기·색·글자 옵션이 여기에 나와요.</p></div>`;return}
-  const S=doc.slides[doc.sel.i],x=resolvedXfrm(sh,S)||{x:0,y:0,cx:0,cy:0,rot:0},px=v=>Math.round(v/9525);
-  let h=head({sp:'도형 · 글상자',pic:'그림',graphicFrame:'표',cxnSp:'선'}[sh.localName]||'개체')+`<div class="pg"><h4>위치 · 크기 (px)</h4><div class="pgrid">${num('x','X',px(x.x))}${num('y','Y',px(x.y))}${num('w','W',px(x.cx))}${num('h','H',px(x.cy))}${num('rot','회전°',Math.round((x.rot||0)/60000))}</div></div>`;
+  if(!sh){p.innerHTML=head('디자인',`슬라이드 ${doc.cur+1} / ${doc.slides.length}`)+`<div class="pg"><h4>배경</h4>${colorRow('slBg',false,'')}</div><div class="pg"><h4>슬라이드</h4><div class="pas">${act('slAdd','addslide','새 슬라이드')}${act('slDup','copy','복제')}${act('slUp','up','앞으로')}${act('slDown','down','뒤로')}${act('slDel','trash','삭제')}</div></div><div class="pg m-only"><h4>레이어</h4><div>${layersHtml()}</div></div><div class="pg w-only"><h4>단축키</h4><p>T 글상자 · R 사각형 · O 원 · L 선<br>Ctrl+Z 실행 취소 · Ctrl+Shift+Z 다시 실행<br>Ctrl+D 복제 · Delete 삭제<br>방향키 1px 이동 · Shift+방향키 10px<br>Enter 글자 고치기 · Esc 선택 해제</p></div>`;return}
+  const S=doc.slides[doc.sel.i],x=resolvedXfrm(sh,S)||{x:0,y:0,cx:0,cy:0,rot:0},px=v=>Math.round(v/9525),isSp=sh.localName==='sp',isLn=sh.localName==='cxnSp',isPic=sh.localName==='pic';
+  let h=head('디자인',{sp:'도형 · 글상자',pic:'그림',graphicFrame:'표',cxnSp:'선'}[sh.localName]||'개체');
+  h+=`<div class="pg"><h4>위치</h4><div class="prow"><div class="seg">${sg('aL','','aL','왼쪽 맞춤')}${sg('aC','','aC','가로 가운데')}${sg('aR','','aR','오른쪽 맞춤')}</div><div class="seg">${sg('aT','','aT','위쪽 맞춤')}${sg('aM','','aM','세로 가운데')}${sg('aB','','aB','아래쪽 맞춤')}</div></div><div class="pgrid">${num('x','X',px(x.x))}${num('y','Y',px(x.y))}</div><div class="prow">${num('rot','회전°',Math.round((x.rot||0)/60000))}<div class="pbs">${bt('flipH','','flipH','좌우 뒤집기',x.flipH)}${bt('flipV','','flipV','상하 뒤집기',x.flipV)}</div></div></div>`;
+  h+=`<div class="pg"><h4>크기</h4><div class="prow">${num('w','W',px(x.cx))}${num('h','H',px(x.cy))}${bt('lock','',doc.lock?'lock':'unlock','비율 고정',doc.lock)}</div></div>`;
+  if(isSp||isPic)h+=`<div class="pg"><h4>모양</h4><div class="pgrid">${num('op','불투명 %',getOpacity(sh))}${isRect(sh)?num('rad','모서리',getRadius(sh,x)):''}</div></div>`;
+  if(isSp)h+=`<div class="pg"><h4>채우기</h4>${colorRow('fill',true,hexOf(spPrOf(sh)))}</div>`;
+  if(isSp||isLn){const d=getDash(sh);h+=`<div class="pg"><h4>테두리</h4>${colorRow('ln',true,hexOf(kid(spPrOf(sh),'ln')))}<div class="prow">${num('lw','두께 pt',lineW(sh))}<div class="seg">${sg('dash','solid','실선','실선',d==='solid')}${sg('dash','dash','파선','파선',d==='dash')}${sg('dash','dot','점선','점선',d==='dot')}</div></div></div>`}
+  if(isSp||isPic){const v=getShadow(sh);h+=`<div class="pg"><h4>그림자</h4><div class="seg full">${sg('shd','','없음','그림자 없음',!v)}${sg('shd','s','작게','작은 그림자',v==='s')}${sg('shd','m','보통','보통 그림자',v==='m')}${sg('shd','l','크게','큰 그림자',v==='l')}</div></div>`}
   const tbs=textBodies(sh);
-  if(tbs.length){const r=tbs[0].getElementsByTagNameNS(ANS,'rPr')[0]||tbs[0].getElementsByTagNameNS(ANS,'endParaRPr')[0];const on=n=>!!r&&['1','true','sng'].includes(r.getAttribute(n));const pp=tbs[0].getElementsByTagNameNS(ANS,'pPr')[0],al=pp&&pp.getAttribute('algn');
-    h+=`<div class="pg"><h4>글자</h4><div class="prow">${num('sz','크기 pt',curPt(tbs[0]))}<div class="pbs">${bt('b','','bold','굵게',on('b'))}${bt('i','','italic','기울임',on('i'))}${bt('u','','underline','밑줄',on('u'))}</div></div><div class="pbs">${bt('al','l','alignl','왼쪽 정렬',al==='l')}${bt('al','ctr','alignc','가운데 정렬',al==='ctr')}${bt('al','r','alignr','오른쪽 정렬',al==='r')}</div>${colorRow('tc')}</div>`}
-  if(sh.localName==='sp')h+=`<div class="pg"><h4>채우기</h4>${colorRow('fill',true)}</div><div class="pg"><h4>테두리</h4>${colorRow('ln',true)}<div class="prow">${num('lw','두께 pt',lineW(sh))}</div></div>`;
-  h+=`<div class="pg"><h4>순서 · 동작</h4><div class="pas">${act('front','front','맨 앞으로')}${act('back','back2','맨 뒤로')}${act('dupS','copy','복제')}${act('delS','trash','삭제')}</div></div>`;
+  if(tbs.length){const r=tbs[0].getElementsByTagNameNS(ANS,'rPr')[0]||tbs[0].getElementsByTagNameNS(ANS,'endParaRPr')[0];const on=n=>!!r&&['1','true','sng'].includes(r.getAttribute(n));const pp=tbs[0].getElementsByTagNameNS(ANS,'pPr')[0],al=pp&&pp.getAttribute('algn'),bp=kid(tbs[0],'bodyPr'),va=bp&&bp.getAttribute('anchor');
+    h+=`<div class="pg"><h4>글자</h4><div class="prow">${num('sz','크기 pt',curPt(tbs[0]))}${num('ls','줄 간격 %',getLs(tbs[0]))}</div><div class="prow"><div class="seg">${sg('b','','bold','굵게',on('b'))}${sg('i','','italic','기울임',on('i'))}${sg('u','','underline','밑줄',on('u'))}</div><div class="seg">${sg('al','l','alignl','왼쪽 정렬',al==='l')}${sg('al','ctr','alignc','가운데 정렬',al==='ctr')}${sg('al','r','alignr','오른쪽 정렬',al==='r')}</div></div>${sh.localName==='sp'?`<div class="seg">${sg('va','t','aT','위쪽',va==='t')}${sg('va','ctr','aM','세로 가운데',va==='ctr')}${sg('va','b','aB','아래쪽',va==='b')}</div>`:''}${colorRow('tc',false,hexOf(r))}</div>`}
+  h+=`<div class="pg"><h4>순서</h4><div class="seg full">${sg('front','','맨 앞','맨 앞으로')}${sg('fwd','','앞으로','한 단계 앞으로')}${sg('bwd','','뒤로','한 단계 뒤로')}${sg('back','','맨 뒤','맨 뒤로')}</div><div class="pas">${act('dupS','copy','복제')}${act('delS','trash','삭제')}</div></div>`;
   p.innerHTML=h;
 }
 function mkFill(D,hex){if(!hex)return D.createElementNS(ANS,'a:noFill');const f=D.createElementNS(ANS,'a:solidFill'),c=D.createElementNS(ANS,'a:srgbClr');c.setAttribute('val',hex);f.appendChild(c);return f}
@@ -1419,6 +1548,7 @@ function setLine(sh,o){
   if(o.w!=null)ln.setAttribute('w',Math.round(Math.max(0,o.w)*12700));
   if('color' in o){for(const n of FILLS)for(const x of kids(ln,n))ln.removeChild(x);ln.insertBefore(mkFill(D,o.color),ln.firstChild);if(o.color&&!ln.getAttribute('w'))ln.setAttribute('w',12700)}
   else if(!FILLS.some(n=>kid(ln,n)))ln.insertBefore(mkFill(D,'000000'),ln.firstChild);
+  if(o.dash){for(const x of kids(ln,'prstDash'))ln.removeChild(x);if(o.dash!=='solid'){const pd=D.createElementNS(ANS,'a:prstDash');pd.setAttribute('val',o.dash==='dot'?'sysDot':'dash');const f=FILLS.map(n=>kid(ln,n)).find(Boolean);ln.insertBefore(pd,f?f.nextSibling:ln.firstChild)}}
 }
 function styleTb(tb,o){
   const D=tb.ownerDocument;
@@ -1437,32 +1567,48 @@ function setSlideBg(S,hex){const D=S.part.dom,cs=kid(D.documentElement,'cSld');f
 function applyProp(k,v){
   if(!doc||doc.kind!=='deck')return;
   if(k==='close'){doc.showProps=false;renderProps();return}
+  if(k==='zoom'){doc.dz=Math.min(3,Math.max(.25,(doc.dz||1)+ +v*.25));renderAllSlides();return}
+  if(k==='lock'){doc.lock=!doc.lock;renderProps();return}
   const sl={slAdd:'addSl',slDup:'dupSl',slUp:'up',slDown:'down',slDel:'delSl'}[k];if(sl){deckAct(sl);return}
   if(['front','back','dupS','delS'].includes(k)){deckAct(k);return}
   const hex=String(v||'').replace('#','').toUpperCase(),okHex=/^[0-9A-F]{6}$/.test(hex);
   if(k==='slBg'){if(!okHex)return;const i=doc.cur;snap(i);setSlideBg(doc.slides[i],hex);rerenderSlide(i);markDirty();return}
-  if(!doc.sel)return;const i=doc.sel.i,S=doc.slides[i],sh=S.shapes[doc.sel.k],tbs=textBodies(sh),n=parseFloat(v);
+  if(!doc.sel)return;const i=doc.sel.i,S=doc.slides[i],sh=S.shapes[doc.sel.k],tbs=textBodies(sh),n=parseFloat(v),x=resolvedXfrm(sh,S);
   const first=tbs[0]&&(tbs[0].getElementsByTagNameNS(ANS,'rPr')[0]||tbs[0].getElementsByTagNameNS(ANS,'endParaRPr')[0]);
   const on=a=>!!first&&['1','true','sng'].includes(first.getAttribute(a));
+  const box=()=>({x:x.x,y:x.y,cx:x.cx,cy:x.cy});
   if(['x','y','w','h','rot'].includes(k)){
-    const x=resolvedXfrm(sh,S);if(!x||!isFinite(n))return;snap(i);
-    const b={x:x.x,y:x.y,cx:x.cx,cy:x.cy};
-    if(k==='x')b.x=Math.round(n*9525);else if(k==='y')b.y=Math.round(n*9525);else if(k==='w')b.cx=Math.max(9525,Math.round(n*9525));else if(k==='h')b.cy=Math.max(9525,Math.round(n*9525));
+    if(!x||!isFinite(n))return;snap(i);const b=box();
+    if(k==='x')b.x=Math.round(n*9525);else if(k==='y')b.y=Math.round(n*9525);
+    else if(k==='w'){b.cx=Math.max(9525,Math.round(n*9525));if(doc.lock&&x.cx)b.cy=Math.max(9525,Math.round(b.cx*x.cy/x.cx))}
+    else if(k==='h'){b.cy=Math.max(sh.localName==='cxnSp'?0:9525,Math.round(n*9525));if(doc.lock&&x.cy)b.cx=Math.max(9525,Math.round(b.cy*x.cx/x.cy))}
     setBox(sh,S,b);if(k==='rot'){const xf=xfrmOf(sh);if(xf)xf.el.setAttribute('rot',Math.round((((n%360)+360)%360)*60000))}
   }
+  else if(/^a[LCRTMB]$/.test(k)){if(!x)return;snap(i);const b=box();
+    if(k==='aL')b.x=0;else if(k==='aC')b.x=Math.round((doc.cx-x.cx)/2);else if(k==='aR')b.x=doc.cx-x.cx;else if(k==='aT')b.y=0;else if(k==='aM')b.y=Math.round((doc.cy-x.cy)/2);else b.y=doc.cy-x.cy;setBox(sh,S,b)}
+  else if(k==='flipH'||k==='flipV'){if(!x)return;snap(i);setBox(sh,S,box());const xf=xfrmOf(sh);if(!xf)return;if(xf.el.getAttribute(k)==='1')xf.el.removeAttribute(k);else xf.el.setAttribute(k,'1')}
+  else if(k==='op'){if(!isFinite(n))return;snap(i);if(!setOpacity(sh,n)){toast('먼저 채우기 색을 정해 주세요');return}}
+  else if(k==='rad'){if(!isFinite(n)||!x)return;snap(i);setRadius(sh,x,Math.max(0,n))}
   else if(k==='sz'){if(!isFinite(n)||n<1)return;snap(i);for(const t of tbs)styleTb(t,{sz:Math.min(400,n)})}
+  else if(k==='ls'){if(!isFinite(n)||n<50)return;snap(i);for(const t of tbs)setLs(t,Math.min(400,n))}
   else if(k==='b'||k==='i'||k==='u'){snap(i);const o={};o[k]=!on(k);for(const t of tbs)styleTb(t,o)}
   else if(k==='al'){snap(i);for(const t of tbs)styleTb(t,{al:v})}
+  else if(k==='va'){snap(i);for(const t of tbs){const bp=kid(t,'bodyPr');if(bp)bp.setAttribute('anchor',v)}}
   else if(k==='tc'){if(!okHex)return;snap(i);for(const t of tbs)styleTb(t,{color:hex})}
-  else if(k==='fill'){if(hex&&!okHex)return;snap(i);setFill(sh,hex||null)}
+  else if(k==='fill'){if(hex&&!okHex)return;snap(i);const op=getOpacity(sh);setFill(sh,hex||null);if(hex&&op<100)setOpacity(sh,op)}
   else if(k==='ln'){if(hex&&!okHex)return;snap(i);setLine(sh,{color:hex||null})}
   else if(k==='lw'){if(!isFinite(n))return;snap(i);setLine(sh,{w:n})}
+  else if(k==='dash'){snap(i);setLine(sh,{dash:v})}
+  else if(k==='shd'){snap(i);setShadow(sh,v)}
+  else if(k==='fwd'||k==='bwd'){const tree=sh.parentNode;
+    if(k==='fwd'){const nx=sh.nextElementSibling;if(!nx||nx.localName==='extLst')return;snap(i);tree.insertBefore(nx,sh)}
+    else{const pv=sh.previousElementSibling;if(!pv||['nvGrpSpPr','grpSpPr'].includes(pv.localName))return;snap(i);tree.insertBefore(sh,pv)}}
   else return;
   rerenderSlide(i);markDirty();
 }
 const propsEl=$('#props');
 propsEl.addEventListener('change',e=>{const k=e.target.dataset.p;if(k)applyProp(k,e.target.value)});
-propsEl.addEventListener('click',e=>{const b=e.target.closest('button[data-p]');if(b)applyProp(b.dataset.p,b.dataset.v)});
+propsEl.addEventListener('click',e=>{const l=e.target.closest('[data-ly]');if(l){pickLayer(+l.dataset.ly);return}const b=e.target.closest('button[data-p]');if(b)applyProp(b.dataset.p,b.dataset.v)});
 propsEl.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT')e.target.blur()});
 /* PC 단축키 */
 document.addEventListener('keydown',e=>{
@@ -1481,7 +1627,7 @@ document.addEventListener('keydown',e=>{
     if(mv){e.preventDefault();const st=(e.shiftKey?10:1)*9525,i=doc.sel.i,S=doc.slides[i],sh=S.shapes[doc.sel.k],x=resolvedXfrm(sh,S);if(!x)return;snap(i);setBox(sh,S,{x:x.x+mv[0]*st,y:x.y+mv[1]*st,cx:x.cx,cy:x.cy});rerenderSlide(i);markDirty();return}
   }
   if(tg==='BUTTON')return;
-  if(k==='t'){e.preventDefault();deckAct('addT')}else if(k==='r')deckAct('addR');else if(k==='o')deckAct('addO');
+  if(k==='t'){e.preventDefault();deckAct('addT')}else if(k==='r')deckAct('addR');else if(k==='o')deckAct('addO');else if(k==='l')deckAct('addLine');
 });
 function addTextBox(i){
   const s=doc.slides[i];doc.cur=i;snap(i);
@@ -1592,7 +1738,7 @@ const zoomHtml=()=>`<div class="zoom"><button class="ib" data-z="-1" aria-label=
 function pageBar(label){const b=$('#pageBar');b.className='tabs';b.innerHTML=`<span class="tab on">${label}</span><span class="ro">보기 전용</span><span class="sp"></span>`+zoomHtml()}
 function pdfBar(){
   const b=$('#pageBar');b.className='tools';
-  const tb=(a,i,l,c='')=>`<button class="tb ${c}" data-a="${a}" title="${l}">${ic(i,22)}<span>${l}</span></button>`;
+  const tb=(a,i,l,c='')=>`<button class="tb ${c}" data-a="${a}" title="${l}" aria-label="${l}">${ic(i,22)}<span>${l}</span></button>`;
   const it=doc.psel&&doc.pages[doc.psel.idx]&&doc.pages[doc.psel.idx].items[doc.psel.k];
   if(it)b.innerHTML=(it.t==='text'?tb('edit','pencil','글자 고치기','pri'):'')+tb('del','trash','삭제')+tb('desel','x','해제')+'<span class="sp"></span>'+zoomHtml();
   else b.innerHTML=tb('text','type','글자','pri')+`<label class="tb" title="그림·서명">${ic('image',22)}<span>그림·서명</span><input type="file" class="file-hit pimg-in" accept="image/png,image/jpeg" aria-label="그림 넣기"></label>`+'<span class="dv"></span>'+tb('rot','rotate','쪽 회전')+tb('up','up','앞으로')+tb('down','down','뒤로')+tb('delp','trash','쪽 삭제')+'<span class="sp"></span>'+zoomHtml();
