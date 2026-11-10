@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>바로오피스</title>
 <meta name="description" content="광고 없이 휴대폰에서 엑셀·PPT 파일을 바로 열고 고치는 무료 웹 오피스">
-<meta name="theme-color" content="#121212">
+<meta name="theme-color" content="#111111">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -17,12 +17,14 @@
 <style>
 /* 레이아웃: 상단 앱바 + 본문(홈/엑셀/PPT 화면 전환) + 하단 도구막대. 모바일 한 손 조작 우선 */
 :root{
-  --bg:#121212; --card:#181818; --raise:#242424; --ink:#ffffff; --sub:#b3b3b3; --line:#2a2a2a;
-  --xl:#1ed760; --xl-soft:#12351f; --pp:#ff7a45; --pp-soft:#3a2016; --accent:#1ed760;
-  --grid-head:#1f1f1f; --grid-line:#2c2c2c; --sel:#1ed760;
+  /* 흰 바탕 · 주색 검정 · 강조 파랑 */
+  --bg:#f4f4f5; --card:#ffffff; --raise:#eef0f2; --ink:#111111; --sub:#666b72; --line:#e2e4e8;
+  --main:#111111; --accent:#0a66d8;
+  --xl:#107c41; --xl-soft:#e3f3ea; --pp:#c8502a; --pp-soft:#fbe9e2;
+  --grid-head:#f1f3f4; --grid-line:#e3e6ea; --sel:#0a66d8;
   --display:"IBM Plex Sans KR","Noto Sans KR",system-ui,sans-serif;
   --body:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;
-  color-scheme:dark;
+  color-scheme:light;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -267,6 +269,79 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
 .paper.word a{color:#1f6feb}
 .rc .ic.d{background:#3a1620;color:#ff6b81}.rc .ic.w{background:#14284a;color:#6ea8ff}
 .ro{font-size:12px;color:var(--sub);padding:0 8px;white-space:nowrap}
+
+/* ===== 홈: 검색 · 보관함 목록 · 빠른 실행 격자 ===== */
+.hscroll{background:var(--bg)}
+.home{gap:22px;padding-top:14px}
+.search{display:flex;align-items:center;gap:10px;background:var(--raise);border-radius:8px;padding:0 14px;color:var(--sub)}
+.search input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;padding:12px 0;outline:0}
+.search:focus-within{outline:2px solid var(--accent)}
+.sh{font-family:var(--display);font-size:13px;font-weight:500;color:var(--sub);margin:0 0 8px}
+.sec-h .sh{margin:0}
+.lst{display:flex;flex-direction:column;background:var(--card);border-radius:10px;overflow:hidden}
+.lr{display:flex;align-items:center;gap:14px;padding:12px 14px;background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);text-align:left;cursor:pointer;width:100%}
+.lr:last-child{border-bottom:0}
+.lr:hover,.lr.on{background:var(--raise)}
+.lr .ic{width:42px;height:42px;border-radius:6px;display:grid;place-items:center;flex:none}
+.lr .nm{flex:1;min-width:0}
+.lr .nm b{display:block;font-size:15px;font-weight:500}
+.lr .nm small{font-size:12px;color:var(--sub)}
+.lr .cv{color:var(--sub);flex:none}
+.ic.x{background:var(--xl-soft);color:var(--xl)}.ic.p{background:var(--pp-soft);color:var(--pp)}.ic.d{background:#3a1620;color:#ff6b81}
+.bdg{min-width:36px;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:700;text-align:center;color:#000;font-variant-numeric:tabular-nums;flex:none}
+.bdg.x{background:var(--xl)}.bdg.p{background:var(--pp)}.bdg.d{background:#ff6b81}
+.bdg.zero{background:var(--line);color:var(--sub)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.qt{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:86px;border:1px solid #3d3d3d;border-radius:10px;background:transparent;color:var(--ink);font-size:13px;cursor:pointer;padding:10px 4px;text-align:center}
+.qt:hover,.qt:focus-within,.qt.drag{background:var(--raise);border-color:var(--accent)}
+/* ===== PDF 편집 ===== */
+.paper{position:relative}
+.pi{position:absolute;cursor:move;touch-action:none;white-space:pre;line-height:1.3;font-family:"Noto Sans KR",sans-serif;user-select:none;-webkit-user-select:none}
+.pi img{width:100%;display:block;pointer-events:none}
+.pi.sel{outline:2px solid #1f6feb}
+.paper.curp{box-shadow:0 0 0 2px var(--accent),0 1px 4px rgba(0,0,0,.5)}
+
+/* ===== 라이트 테마 마감 ===== */
+.bar{background:var(--main);color:#fff}
+.bar .title small{color:#b9bcc2}
+.bar .ib{color:#fff}.bar .ib:hover{background:rgba(255,255,255,.16)}
+.btn{border-color:#c9ccd2;background:var(--card)}
+.btn.primary,.btn.xl{background:var(--main);border-color:var(--main);color:#fff}
+.btn.pp{background:var(--accent);border-color:var(--accent);color:#fff}
+.bar .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.ib:hover{background:var(--raise)}
+.search{background:var(--card);border:1px solid var(--line)}
+.lst{border:1px solid var(--line)}
+.qt{background:var(--card);border-color:#cfd2d8}
+.fc{background:var(--raise);color:var(--ink)}
+.fc.on{background:var(--accent);color:#fff}
+.sec-h .sh{margin:0;font-size:13px;font-weight:500}
+.rc:hover{background:rgba(0,0,0,.05)}
+.ic.d,.rc .ic.d{background:#fde8ec;color:#d6304a}
+.rc .ic.w{background:#e5eefc;color:#1f5fd1}
+.bdg{color:#fff}.bdg.x{background:var(--accent)}.bdg.p{background:var(--pp)}.bdg.d{background:#d6304a}
+.bdg.zero{background:var(--raise);color:var(--sub)}
+.bnav{background:var(--card);border-top:1px solid var(--line)}
+.fab,.tb.go{background:var(--main);color:#fff}
+.fab{box-shadow:0 6px 16px rgba(0,0,0,.28)}
+.sheet{background:var(--card)}
+.sheet .new-btn{background:var(--raise)}
+.fx{background:var(--card)}
+.tabs,.tools{background:var(--card);border-top:1px solid var(--line)}
+.tab.on{background:var(--accent);color:#fff}
+.toast{background:var(--main);color:#fff}
+.sw.cur .lbl{color:var(--accent)}
+.sw.cur .slide{box-shadow:0 0 0 2px var(--accent),0 2px 8px rgba(0,0,0,.2)}
+.thumbs{background:var(--raise)}
+.th.cur{background:var(--card);box-shadow:0 0 0 1px var(--line)}
+.props.open{background:var(--card);box-shadow:0 -8px 24px rgba(0,0,0,.18)}
+.pb.on{color:#fff}
+.pact:hover,.pb:hover{filter:brightness(.94)}
+.paper{box-shadow:0 1px 4px rgba(0,0,0,.25)}
+@media(min-width:900px){
+  #deckTools{background:var(--card);border:1px solid var(--line);box-shadow:0 8px 28px rgba(0,0,0,.18)}
+  .props,.props.open{background:var(--card);box-shadow:none}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -283,27 +358,31 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
   <section class="view on" id="home">
     <div class="hscroll" id="hscroll">
     <div class="home">
-      <div class="hero">
-        <h1>광고 없이 바로 열고, 바로 고치기</h1>
-        <p>엑셀·PPT 파일을 열어 숫자와 글자를 고치고 다시 저장해요. 파일은 이 기기 안에서만 처리돼요.</p>
-      </div>
-      <div class="quick">
-        <div class="qc open" id="dropZone"><span class="art"><i data-ic="folder" data-s="28"></i></span><span><b>파일 열기</b><small>엑셀 · 파워포인트 · PDF · 워드</small></span>
-          <input type="file" id="fileIn" class="file-hit file-in" aria-label="파일 열기" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.xlsx,.xlsm,.xls,.csv,.pptx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.ms-excel.sheet.macroEnabled.12,text/csv,text/comma-separated-values,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/octet-stream,application/zip"></div>
-        <button class="qc x" id="newSheet"><span class="art"><i data-ic="sheet" data-s="24"></i></span><span><b>새 엑셀</b><small>빈 시트</small></span></button>
-        <button class="qc p" id="newDeck"><span class="art"><i data-ic="deck" data-s="24"></i></span><span><b>새 PPT</b><small>16:9</small></span></button>
-      </div>
+      <label class="search"><i data-ic="search" data-s="20"></i><input id="q" type="search" placeholder="최근 파일 검색" autocomplete="off" aria-label="최근 파일 검색"></label>
       <p class="note" id="appHint" hidden>Claude 앱 안에서 눌러도 선택 창이 안 뜨면 <a href="https://claude.ai/artifact/CBSrjs4D41EKJtGPq6PDWS" target="_blank" rel="noopener">크롬·사파리 브라우저에서 열기</a>를 눌러 주세요.</p>
       <div>
-        <div class="sec-h"><h2>최근 파일</h2><span>이 기기에 자동 보관</span></div>
-        <div class="fchips" id="fchips"><button class="fc on" data-f="all">전체</button><button class="fc" data-f="sheet">엑셀</button><button class="fc" data-f="deck">PPT</button><button class="fc" data-f="view">PDF·워드</button></div>
-        <div class="recent" id="recent"><div class="empty">아직 연 파일이 없어요.</div></div>
-        <div class="row" style="margin-top:14px">
-          <button class="btn" id="sampleX">예시 엑셀 열기</button>
-          <button class="btn" id="sampleP">예시 PPT 열기</button>
+        <h2 class="sh">보관함</h2>
+        <div class="lst" id="fchips">
+          <button class="lr" data-f="sheet"><span class="ic x"><i data-ic="sheet" data-s="22"></i></span><span class="nm"><b>엑셀</b><small>값·수식 고치기</small></span><span class="bdg x zero" id="cnt_sheet">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
+          <button class="lr" data-f="deck"><span class="ic p"><i data-ic="deck" data-s="22"></i></span><span class="nm"><b>파워포인트</b><small>글자·도형·슬라이드 고치기</small></span><span class="bdg p zero" id="cnt_deck">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
+          <button class="lr" data-f="view"><span class="ic d"><i data-ic="doc" data-s="22"></i></span><span class="nm"><b>PDF · 워드</b><small>PDF 글자·그림 넣기, 워드 보기</small></span><span class="bdg d zero" id="cnt_view">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
         </div>
       </div>
-      <p class="note">엑셀은 셀 값과 수식을, PPT는 글자·글상자·슬라이드를 고칠 수 있어요. 원본의 서식·이미지·차트는 그대로 두고 고친 부분만 바꿔 저장합니다. PDF와 워드(.docx)는 보기 전용이에요. 옛날 형식(.ppt .doc)과 한글(.hwp)은 열 수 없어요.</p>
+      <div>
+        <h2 class="sh">빠른 실행</h2>
+        <div class="grid3">
+          <div class="qt" id="dropZone"><i data-ic="folder" data-s="26"></i>파일 열기<input type="file" id="fileIn" class="file-hit file-in" aria-label="파일 열기" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.xlsx,.xlsm,.xls,.csv,.pptx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.ms-excel.sheet.macroEnabled.12,text/csv,text/comma-separated-values,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/octet-stream,application/zip"></div>
+          <button class="qt" id="newSheet"><i data-ic="sheet" data-s="26"></i>새 엑셀</button>
+          <button class="qt" id="newDeck"><i data-ic="deck" data-s="26"></i>새 PPT</button>
+          <button class="qt" id="sampleX"><i data-ic="sheet" data-s="26"></i>예시 엑셀</button>
+          <button class="qt" id="sampleP"><i data-ic="deck" data-s="26"></i>예시 PPT</button>
+          <button class="qt" id="helpBtn"><i data-ic="help" data-s="26"></i>사용법</button>
+        </div>
+      </div>
+      <div>
+        <div class="sec-h"><h2 class="sh" id="recentH">최근 파일</h2><button class="fc" id="fAll" hidden>전체 보기</button></div>
+        <div class="recent" id="recent"><div class="empty">아직 연 파일이 없어요.</div></div>
+      </div>
     </div>
     </div>
     <nav class="bnav" aria-label="주 메뉴">
@@ -376,6 +455,9 @@ underline:'<path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" x2="20" y1="20" y2="2
 alignl:'<line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/>',
 alignc:'<line x1="21" x2="3" y1="6" y2="6"/><line x1="17" x2="7" y1="12" y2="12"/><line x1="19" x2="5" y1="18" y2="18"/>',
 alignr:'<line x1="21" x2="3" y1="6" y2="6"/><line x1="21" x2="9" y1="12" y2="12"/><line x1="21" x2="7" y1="18" y2="18"/>',
+search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',chev:'<path d="m9 18 6-6-6-6"/>',
+help:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+rotate:'<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
 front:'<rect x="8" y="8" width="8" height="8" rx="2"/><path d="M4 10a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2"/><path d="M14 20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2"/>'};
 function ic(n,sz=20){return `<svg class="lu" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`}
 for(const e of [...document.querySelectorAll('[data-ic]')])e.outerHTML=ic(e.dataset.ic,+e.dataset.s||20);
@@ -405,13 +487,19 @@ const IDB={db:null,
 };
 let recentF='all';
 const KINDS={sheet:{c:'x',i:'sheet',n:'엑셀'},deck:{c:'p',i:'deck',n:'파워포인트'},pdf:{c:'d',i:'doc',n:'PDF'},word:{c:'w',i:'doc',n:'워드'}};
+const grp=r=>r.kind==='sheet'||r.kind==='deck'?r.kind:'view';
 async function refreshRecent(){
   const all=(await IDB.all()).sort((a,b)=>b.updated-a.updated);
   for(const r of all.slice(20))IDB.del(r.id);
-  const grp=r=>r.kind==='sheet'||r.kind==='deck'?r.kind:'view';
-  const list=all.slice(0,20).filter(r=>recentF==='all'||grp(r)===recentF);
+  const top=all.slice(0,20);
+  for(const g of ['sheet','deck','view']){const n=top.filter(r=>grp(r)===g).length,b=$('#cnt_'+g);b.textContent=n;b.classList.toggle('zero',!n)}
+  for(const c of document.querySelectorAll('#fchips .lr'))c.classList.toggle('on',c.dataset.f===recentF);
+  $('#recentH').textContent=recentF==='all'?'최근 파일':{sheet:'엑셀 파일',deck:'파워포인트 파일',view:'PDF · 워드 파일'}[recentF];
+  $('#fAll').hidden=recentF==='all';
+  const q=($('#q').value||'').trim().toLowerCase();
+  const list=top.filter(r=>(recentF==='all'||grp(r)===recentF)&&(!q||r.name.toLowerCase().includes(q)));
   const box=$('#recent');
-  if(!list.length){box.innerHTML=`<div class="empty">${all.length?'이 종류의 파일은 아직 없어요.':'아직 연 파일이 없어요. 파일을 열거나 아래 예시로 먼저 써 보세요.'}</div>`;return}
+  if(!list.length){box.innerHTML=`<div class="empty">${q?'검색에 맞는 파일이 없어요.':top.length?'이 종류의 파일은 아직 없어요.':'아직 연 파일이 없어요. 파일 열기나 예시로 시작해 보세요.'}</div>`;return}
   box.innerHTML='';
   for(const r of list){
     const K=KINDS[r.kind]||KINDS.sheet;
@@ -420,7 +508,10 @@ async function refreshRecent(){
     box.appendChild(b);
   }
 }
-$('#fchips').onclick=e=>{const f=e.target.closest('[data-f]');if(!f)return;recentF=f.dataset.f;for(const c of document.querySelectorAll('#fchips .fc'))c.classList.toggle('on',c===f);refreshRecent()};
+$('#fchips').onclick=e=>{const f=e.target.closest('[data-f]');if(!f)return;recentF=recentF===f.dataset.f?'all':f.dataset.f;refreshRecent()};
+$('#fAll').onclick=()=>{recentF='all';refreshRecent()};
+$('#q').oninput=()=>refreshRecent();
+$('#helpBtn').onclick=()=>openSheet((b,close)=>{b.innerHTML=`<h3>사용법</h3><p><b>엑셀</b> — 셀을 누르고 위 입력줄에서 값이나 수식(=SUM 등)을 고쳐요. 원본 서식은 그대로 남아요.</p><p><b>파워포인트</b> — 개체를 눌러 끌어서 옮기고 모서리로 크기를 바꿔요. 속성에서 색·글자·순서를 고치고, 글상자·도형·이미지를 넣을 수 있어요.</p><p><b>PDF</b> — 글자와 그림(서명·도장)을 넣고, 쪽을 돌리거나 지우거나 순서를 바꿔요. 원래 있던 글자는 고칠 수 없어요.</p><p><b>워드(.docx)</b>는 보기 전용이에요. 옛날 형식(.ppt .doc)과 한글(.hwp)은 열 수 없어요.</p><p>파일은 서버로 보내지 않고 이 기기 안에서만 처리해요. 고친 파일은 오른쪽 위 내려받기로 저장하세요.</p><div class="row end"><button class="btn primary" data-a="y">확인</button></div>`;b.onclick=e=>{if(e.target.dataset.a)close(null)}});
 $('#navHome').onclick=()=>$('#hscroll').scrollTo({top:0,behavior:'smooth'});
 $('#fabNew').onclick=()=>openSheet((b,close)=>{b.innerHTML=`<h3>새로 만들기</h3><button class="new-btn x" data-n="newSheet"><span class="ic">${ic('sheet',22)}</span><span><b>새 엑셀</b><small>빈 시트로 시작</small></span></button><button class="new-btn p" data-n="newDeck"><span class="ic">${ic('deck',22)}</span><span><b>새 PPT</b><small>16:9 빈 발표 자료</small></span></button>`;b.onclick=e=>{const n=e.target.closest('[data-n]');if(n){close(null);$('#'+n.dataset.n).click()}}});
 
@@ -452,7 +543,7 @@ $('#saveBtn').onclick=async()=>{if(!doc)return;loading(true,'파일 만드는 �
 let persistT;
 function markDirty(){doc.dirty=true;setTitle();clearTimeout(persistT);persistT=setTimeout(()=>persist(),1500)}
 async function persist(now){if(!doc||!doc.dirty)return;clearTimeout(persistT);try{const d=doc;const {bytes}=await buildFile();d.rec.buf=bytes;d.rec.updated=Date.now();await IDB.put({...d.rec})}catch(e){console.warn('autosave',e)}}
-async function buildFile(){if(doc.view)return{bytes:doc.rec.buf.slice(0),name:doc.rec.name};if(doc.kind==='sheet')return buildSheetFile();return buildDeckFile()}
+async function buildFile(){if(doc.kind==='pdf')return buildPdfFile();if(doc.view)return{bytes:doc.rec.buf.slice(0),name:doc.rec.name};if(doc.kind==='sheet')return buildSheetFile();return buildDeckFile()}
 
 /* ========== 파일 열기 ========== */
 for(const inp of document.querySelectorAll('.file-in'))inp.onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)openFile(f)};
@@ -1486,32 +1577,141 @@ $('#sampleP').onclick=()=>makeDeck(true);
 const libs={};
 function loadLib(url){return libs[url]||(libs[url]=new Promise((res,rej)=>{const x=document.createElement('script');x.src=url;x.onload=res;x.onerror=()=>{delete libs[url];rej(new Error('라이브러리를 불러오지 못했어요'))};document.head.appendChild(x)}))}
 const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',PDFW='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',MAMMOTH='https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
-function pageBar(label){$('#pageBar').innerHTML=`<span class="tab on">${label}</span><span class="ro">보기 전용</span><span class="sp"></span><div class="zoom"><button class="ib" data-z="-1" aria-label="축소">${ic('minus',18)}</button><span>${Math.round(doc.zoom*100)}%</span><button class="ib" data-z="1" aria-label="확대">${ic('plus',18)}</button></div>`}
-$('#pageBar').onclick=e=>{const d=e.target.closest('[data-z]');if(!d||!doc||!doc.view)return;doc.zoom=Math.min(3,Math.max(.5,doc.zoom+ +d.dataset.z*.25));if(doc.kind==='pdf')renderPdf();else{$('#pages .paper').style.zoom=doc.zoom;pageBar('워드')}};
+const PDFLIB='https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+const zoomHtml=()=>`<div class="zoom"><button class="ib" data-z="-1" aria-label="축소">${ic('minus',18)}</button><span>${Math.round(doc.zoom*100)}%</span><button class="ib" data-z="1" aria-label="확대">${ic('plus',18)}</button></div>`;
+function pageBar(label){const b=$('#pageBar');b.className='tabs';b.innerHTML=`<span class="tab on">${label}</span><span class="ro">보기 전용</span><span class="sp"></span>`+zoomHtml()}
+function pdfBar(){
+  const b=$('#pageBar');b.className='tools';
+  const tb=(a,i,l,c='')=>`<button class="tb ${c}" data-a="${a}" title="${l}">${ic(i,22)}<span>${l}</span></button>`;
+  const it=doc.psel&&doc.pages[doc.psel.idx]&&doc.pages[doc.psel.idx].items[doc.psel.k];
+  if(it)b.innerHTML=(it.t==='text'?tb('edit','pencil','글자 고치기','pri'):'')+tb('del','trash','삭제')+tb('desel','x','해제')+'<span class="sp"></span>'+zoomHtml();
+  else b.innerHTML=tb('text','type','글자','pri')+`<label class="tb" title="그림·서명">${ic('image',22)}<span>그림·서명</span><input type="file" class="file-hit pimg-in" accept="image/png,image/jpeg" aria-label="그림 넣기"></label>`+'<span class="dv"></span>'+tb('rot','rotate','쪽 회전')+tb('up','up','앞으로')+tb('down','down','뒤로')+tb('delp','trash','쪽 삭제')+'<span class="sp"></span>'+zoomHtml();
+}
+$('#pageBar').onclick=e=>{
+  if(!doc)return;
+  const d=e.target.closest('[data-z]');
+  if(d){doc.zoom=Math.min(3,Math.max(.5,doc.zoom+ +d.dataset.z*.25));if(doc.kind==='pdf')renderPdf();else if(doc.kind==='word'){$('#pages .paper').style.zoom=doc.zoom;pageBar('워드')}return}
+  const a=e.target.closest('[data-a]');if(a&&doc.kind==='pdf')pdfAct(a.dataset.a);
+};
+$('#pageBar').addEventListener('change',e=>{if(e.target.classList.contains('pimg-in')){const f=e.target.files[0];e.target.value='';if(f&&doc&&doc.kind==='pdf')pdfAddImage(f)}});
 async function openPdfDoc(rec){
   await loadLib(PDFJS);const L=window.pdfjsLib;L.GlobalWorkerOptions.workerSrc=PDFW;
   const pdf=await L.getDocument({data:new Uint8Array(rec.buf.slice(0))}).promise;
   const v=(await pdf.getPage(1)).getViewport({scale:1});
-  doc={kind:'pdf',view:true,rec,pdf,zoom:1,ratio:v.height/v.width,dirty:false};
-  show('pageView');setTitle();renderPdf();
+  doc={kind:'pdf',rec,pdf,orig:rec.buf.slice(0),zoom:1,ratio:v.height/v.width,dirty:false,psel:null,pages:[]};
+  for(let i=0;i<pdf.numPages;i++)doc.pages.push({src:i,rot:0,items:[]});
+  show('pageView');setTitle();renderPdf(true);
 }
 let pio;
-function renderPdf(){
-  const box=$('#pages');box.innerHTML='';box.scrollTo(0,0);
+function renderPdf(reset){
+  const box=$('#pages'),st=reset?0:box.scrollTop;box.innerHTML='';
   const W=Math.round(Math.min(box.clientWidth-24,900)*doc.zoom);
   if(pio)pio.disconnect();
   pio=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){pio.unobserve(e.target);drawPdfPage(e.target,W)}},{root:box,rootMargin:'800px 0px'});
-  for(let n=1;n<=doc.pdf.numPages;n++){const d=el('div','paper');d.dataset.n=n;d.style.width=W+'px';d.style.height=Math.round(W*doc.ratio)+'px';box.appendChild(d);pio.observe(d)}
-  pageBar(`PDF · ${doc.pdf.numPages}쪽`);
+  doc.pages.forEach((P,idx)=>{const d=el('div','paper');d.dataset.idx=idx;d.style.width=W+'px';d.style.height=Math.round(W*(P.ratio||doc.ratio))+'px';box.appendChild(d);pio.observe(d)});
+  box.scrollTop=st;pdfBar();
 }
 async function drawPdfPage(d,W){
-  const my=doc;
-  try{const pg=await my.pdf.getPage(+d.dataset.n);if(doc!==my||!d.isConnected)return;
-    const v1=pg.getViewport({scale:1}),dpr=Math.min(window.devicePixelRatio||1,2),vp=pg.getViewport({scale:W/v1.width*dpr});
+  const my=doc,P=my.pages[+d.dataset.idx];
+  try{const pg=await my.pdf.getPage(P.src+1);if(doc!==my||!d.isConnected)return;
+    const rot=(pg.rotate+P.rot)%360,v1=pg.getViewport({scale:1,rotation:rot}),dpr=Math.min(window.devicePixelRatio||1,2),vp=pg.getViewport({scale:W/v1.width*dpr,rotation:rot});
+    P.ratio=v1.height/v1.width;
     const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);c.style.cssText='width:100%;display:block';
-    d.style.height=Math.round(W*v1.height/v1.width)+'px';d.appendChild(c);
+    d.style.height=Math.round(W*P.ratio)+'px';d.appendChild(c);drawItems(d,P);
     await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise}
   catch(e){console.warn('pdf page',e)}
+}
+function drawItems(d,P){
+  for(const x of d.querySelectorAll('.pi'))x.remove();
+  const W=d.clientWidth,idx=+d.dataset.idx;
+  P.items.forEach((it,k)=>{const e=el('div','pi');e.dataset.k=k;e.style.left=it.x*100+'%';e.style.top=it.y*100+'%';
+    if(it.t==='text'){e.textContent=it.text;e.style.fontSize=it.fs*W+'px';e.style.color='#'+it.color;if(it.b)e.style.fontWeight='700'}
+    else{e.style.width=it.w*100+'%';const im=document.createElement('img');im.src=it.src;im.alt='';e.appendChild(im)}
+    if(doc.psel&&doc.psel.idx===idx&&doc.psel.k===k){e.classList.add('sel');if(it.t==='img'){const h=el('span','hd se');e.appendChild(h)}}
+    d.appendChild(e)});
+}
+function curPaper(){const box=$('#pages'),br=box.getBoundingClientRect(),mid=br.top+br.height/2;let best=null,bd=1e9;for(const d of box.querySelectorAll('.paper')){const r=d.getBoundingClientRect(),dist=mid<r.top?r.top-mid:mid>r.bottom?mid-r.bottom:0;if(dist<bd){bd=dist;best=d}}return best}
+function redrawPaper(idx){const d=$(`#pages .paper[data-idx="${idx}"]`);if(d)drawItems(d,doc.pages[idx]);pdfBar()}
+function placeAt(d){const r=d.getBoundingClientRect(),br=$('#pages').getBoundingClientRect();const cy=Math.min(Math.max((br.top+br.height/2-r.top)/r.height,.05),.85);return{x:.12,y:cy}}
+function pdfTextDialog(it){
+  const COLORS=['000000','E11D48','1F6FEB','1F7A3F','6B7280','FFFFFF'];
+  return openSheet((b,close)=>{
+    let pt=it?it.pt:14,bold=it?!!it.b:false,color=it?it.color:'000000';
+    b.innerHTML=`<h3>${it?'글자 고치기':'글자 넣기'}</h3><textarea id="pta" aria-label="내용" placeholder="넣을 글자">${esc(it?it.text:'')}</textarea>
+      <div class="row"><div class="stepper"><button data-s="-1" aria-label="작게">−</button><span id="ppt">${pt}pt</span><button data-s="1" aria-label="크게">+</button></div><button class="tg${bold?' on':''}" id="pbt" aria-pressed="${bold}">B</button></div>
+      <div class="sws">${COLORS.map(c=>`<button class="swc${c===color?' on':''}" data-c="${c}" style="background:#${c}" aria-label="#${c}"></button>`).join('')}</div>
+      <div class="row end"><button class="btn" data-a="n">취소</button><button class="btn primary" data-a="y">${it?'적용':'넣기'}</button></div>`;
+    b.onclick=e=>{
+      const st=e.target.closest('[data-s]');if(st){pt=Math.max(6,Math.min(96,pt+ +st.dataset.s*(pt>=24?2:1)));$('#ppt',b).textContent=pt+'pt';return}
+      if(e.target.id==='pbt'){bold=!bold;e.target.classList.toggle('on',bold);return}
+      const sw=e.target.closest('.swc');if(sw){for(const x of b.querySelectorAll('.swc'))x.classList.remove('on');sw.classList.add('on');color=sw.dataset.c;return}
+      const a=e.target.dataset.a;if(a==='n')close(null);if(a==='y'){const text=$('#pta',b).value.replace(/\s+$/,'');close(text?{text,pt,b:bold,color}:null)}
+    };
+  });
+}
+async function pdfAct(a){
+  const d=curPaper();if(!d)return;const idx=+d.dataset.idx,P=doc.pages[idx];
+  if(a==='text'){const r=await pdfTextDialog(null);if(!r)return;const v=await pageW(P);const pos=placeAt(d);P.items.push({t:'text',...pos,...r,fs:r.pt/v});doc.psel={idx,k:P.items.length-1};redrawPaper(idx);markDirty()}
+  else if(a==='edit'){const s=doc.psel,it=doc.pages[s.idx].items[s.k];const r=await pdfTextDialog(it);if(!r)return;const v=await pageW(doc.pages[s.idx]);Object.assign(it,r,{fs:r.pt/v});redrawPaper(s.idx);markDirty()}
+  else if(a==='del'){const s=doc.psel;doc.pages[s.idx].items.splice(s.k,1);doc.psel=null;redrawPaper(s.idx);markDirty()}
+  else if(a==='desel'){const s=doc.psel;doc.psel=null;redrawPaper(s.idx)}
+  else if(a==='rot'){P.rot=(P.rot+90)%360;delete P.ratio;doc.psel=null;renderPdf();markDirty()}
+  else if(a==='up'||a==='down'){const j=idx+(a==='up'?-1:1);if(j<0||j>=doc.pages.length)return;[doc.pages[idx],doc.pages[j]]=[doc.pages[j],doc.pages[idx]];doc.psel=null;renderPdf();const t=$(`#pages .paper[data-idx="${j}"]`);if(t)t.scrollIntoView({block:'center'});markDirty();toast(`${j+1}쪽으로 옮겼어요`)}
+  else if(a==='delp'){if(doc.pages.length<2){toast('한 쪽뿐이라 지울 수 없어요');return}if(!await ask(`${idx+1}쪽을 지울까요?`,'내려받기 전까지는 원본 파일이 바뀌지 않아요.','지우기',true))return;doc.pages.splice(idx,1);doc.psel=null;renderPdf();markDirty()}
+}
+async function pageW(P){const pg=await doc.pdf.getPage(P.src+1);return pg.getViewport({scale:1,rotation:(pg.rotate+P.rot)%360}).width}
+async function pdfAddImage(file){
+  if(!/^image\/(png|jpeg)$/.test(file.type)){toast('PNG·JPG 그림만 넣을 수 있어요');return}
+  const d=curPaper();if(!d)return;const idx=+d.dataset.idx,P=doc.pages[idx];
+  const src=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file)});
+  const im=new Image();await new Promise(r=>{im.onload=r;im.onerror=r;im.src=src});
+  const pos=placeAt(d);P.items.push({t:'img',...pos,w:.3,asp:(im.naturalHeight||3)/(im.naturalWidth||4),src,mime:file.type});
+  doc.psel={idx,k:P.items.length-1};redrawPaper(idx);markDirty();
+}
+let pdrag=null;
+const pagesBox=$('#pages');
+pagesBox.addEventListener('pointerdown',e=>{
+  if(!doc||doc.kind!=='pdf')return;
+  const pi=e.target.closest('.pi');
+  if(!pi){if(doc.psel){const i=doc.psel.idx;doc.psel=null;redrawPaper(i)}return}
+  const d=pi.closest('.paper'),idx=+d.dataset.idx,k=+pi.dataset.k,hd=!!e.target.closest('.hd');let fresh=false,el2=pi;
+  if(!(doc.psel&&doc.psel.idx===idx&&doc.psel.k===k)){const old=doc.psel;doc.psel={idx,k};if(old&&old.idx!==idx)redrawPaper(old.idx);redrawPaper(idx);fresh=true;el2=d.querySelector(`.pi[data-k="${k}"]`);if(e.pointerType==='touch'){pdrag=null;return}}
+  e.preventDefault();try{el2.setPointerCapture(e.pointerId)}catch(_){}
+  pdrag={el:el2,d,idx,k,hd,fresh,sx:e.clientX,sy:e.clientY,l:el2.offsetLeft,t:el2.offsetTop,w:el2.offsetWidth,moved:false};
+});
+pagesBox.addEventListener('pointermove',e=>{const g=pdrag;if(!g)return;const dx=e.clientX-g.sx,dy=e.clientY-g.sy;if(!g.moved&&Math.hypot(dx,dy)<4)return;g.moved=true;
+  if(g.hd)g.el.style.width=Math.max(16,g.w+dx)+'px';else{g.el.style.left=g.l+dx+'px';g.el.style.top=g.t+dy+'px'}});
+pagesBox.addEventListener('pointerup',e=>{const g=pdrag;pdrag=null;if(!g)return;const it=doc.pages[g.idx].items[g.k];
+  if(g.moved){const W=g.d.clientWidth,H=g.d.clientHeight;if(g.hd)it.w=Math.min(1,g.el.offsetWidth/W);else{it.x=g.el.offsetLeft/W;it.y=g.el.offsetTop/H}redrawPaper(g.idx);markDirty()}
+  else if(!g.fresh&&it.t==='text')pdfAct('edit')});
+pagesBox.addEventListener('pointercancel',()=>{if(pdrag){const i=pdrag.idx;pdrag=null;redrawPaper(i)}});
+function textCanvas(it,DW){
+  const K=4,fpx=it.fs*DW*K,lines=it.text.split('\n'),c=document.createElement('canvas'),x=c.getContext('2d'),font=`${it.b?700:400} ${fpx}px "Noto Sans KR",sans-serif`;
+  x.font=font;const lh=fpx*1.3;c.width=Math.ceil(Math.max(1,...lines.map(l=>x.measureText(l).width)))+2;c.height=Math.ceil(lh*lines.length)+2;
+  x.font=font;x.fillStyle='#'+it.color;x.textBaseline='middle';lines.forEach((l,i)=>x.fillText(l,0,lh*i+lh/2));
+  return{url:c.toDataURL('image/png'),w:c.width/K,h:c.height/K};
+}
+/* 저장: 원본 PDF 쪽을 순서대로 복사한 뒤 넣은 글자·그림을 그 위에 그림 */
+async function buildPdfFile(){
+  const edited=doc.pages.length!==doc.pdf.numPages||doc.pages.some((p,i)=>p.src!==i||p.rot||p.items.length);
+  if(!edited)return{bytes:doc.orig.slice(0),name:doc.rec.name};
+  await loadLib(PDFLIB);const {PDFDocument,degrees}=window.PDFLib;
+  const src=await PDFDocument.load(doc.orig.slice(0),{ignoreEncryption:true}),out=await PDFDocument.create();
+  const copied=await out.copyPages(src,doc.pages.map(p=>p.src));
+  for(let n=0;n<copied.length;n++){
+    const pg=copied[n],P=doc.pages[n];out.addPage(pg);
+    const r=(((pg.getRotation().angle+P.rot)%360)+360)%360;if(P.rot)pg.setRotation(degrees(r));
+    const {width:W,height:H}=pg.getSize(),DW=r%180?H:W,DH=r%180?W:H;
+    for(const it of P.items){
+      let img,w,h;
+      if(it.t==='text'){const c=textCanvas(it,DW);img=await out.embedPng(c.url);w=c.w;h=c.h}
+      else{img=it.mime==='image/jpeg'?await out.embedJpg(it.src):await out.embedPng(it.src);w=it.w*DW;h=w*it.asp}
+      const dx=it.x*DW,dy=it.y*DH+h;let x,y;
+      if(r===0){x=dx;y=H-dy}else if(r===90){x=dy;y=dx}else if(r===180){x=W-dx;y=dy}else{x=W-dy;y=H-dx}
+      pg.drawImage(img,{x,y,width:w,height:h,rotate:degrees(r)});
+    }
+  }
+  const u=await out.save();return{bytes:u.buffer.slice(u.byteOffset,u.byteOffset+u.byteLength),name:doc.rec.name};
 }
 async function openWordDoc(rec){
   await loadLib(MAMMOTH);
