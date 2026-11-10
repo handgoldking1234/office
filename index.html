@@ -441,7 +441,7 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
           <button class="lr" data-f="view"><span class="ic d"><i data-ic="doc" data-s="22"></i></span><span class="nm"><b>PDF · 워드</b><small>PDF 글자·그림 넣기, 워드 보기</small></span><span class="bdg d zero" id="cnt_view">0</span><span class="cv"><i data-ic="chev" data-s="18"></i></span></button>
         </div>
       </div>
-      <div class="tip" id="kakaoTip"><i data-ic="help" data-s="18"></i><div><b>카톡으로 받은 파일 여는 법</b><br>① 카톡에서 파일을 누르고 <b>공유(다른 앱으로 열기) → 바로오피스</b>를 고르세요. 바로오피스를 홈 화면에 설치해 두면 목록에 나와요.<br>② 또는 파일 열기 → 선택 창 왼쪽 위 ☰ → <b>다운로드 › KakaoTalk</b> 폴더에서 고르세요.<br><button class="btn" id="installBtn" hidden>홈 화면에 설치</button></div></div>
+      <div class="tip" id="kakaoTip"><i data-ic="help" data-s="18"></i><div><b>카톡으로 받은 파일 여는 법</b><br>① 카톡에서 파일을 누르고 <b>공유(다른 앱으로 열기) → 바로오피스</b>를 고르세요. 바로오피스를 홈 화면에 설치해 두면 목록에 나와요.<br>② 또는 <b>파일 열기</b>를 누르면 선택 창이 다운로드 폴더에서 열려요. 그 안의 <b>KakaoTalk</b> 폴더에 카톡 파일이 있어요. 다른 곳이 열리면 왼쪽 위 ☰ → <b>다운로드</b> 또는 <b>최근</b>을 누르세요.<br><button class="btn" id="installBtn" hidden>홈 화면에 설치</button></div></div>
     </div>
     </div>
     <nav class="bnav" aria-label="주 메뉴">
@@ -620,7 +620,23 @@ function show(view){
 function setTitle(){if(!doc)return;$('#titleBtn').innerHTML=`${esc(doc.rec.name)}<small id="stat">${KINDS[doc.kind].n} · ${doc.view?'보기 전용':doc.dirty?'수정됨 · 이 기기에 자동 보관':'원본 그대로'}</small>`}
 $('#backBtn').onclick=async()=>{if(doc&&doc.dirty)await persist(true);show('home')};
 $('#titleBtn').onclick=async()=>{if(!doc)return;const ext=extOf(doc.rec.name);const base=doc.rec.name.replace(/\.[^.]+$/,'');const v=await promptText('파일 이름 바꾸기',base);if(v&&v.trim()){doc.rec.name=v.trim()+'.'+ext;setTitle();persist(true)}};
-$('#saveBtn').onclick=async()=>{if(!doc)return;loading(true,'파일 만드는 중…');try{const {bytes,name}=await buildFile();loading(false);await saveBytes(name,bytes)}catch(e){loading(false);console.error(e);toast('저장 파일을 만들지 못했어요: '+(e.message||e))}};
+async function saveToHandle(h,bytes){
+  if(h.requestPermission){const p=await h.requestPermission({mode:'readwrite'});if(p!=='granted')throw new Error('저장 권한을 받지 못했어요')}
+  const w=await h.createWritable();await w.write(bytes);await w.close();
+}
+$('#saveBtn').onclick=async()=>{
+  if(!doc)return;const d=doc;
+  let where='copy';
+  if(d.handle&&d.kind!=='word'&&extOf(d.handle.name||'')===extOf(d.rec.name)){
+    where=await openSheet((b,close)=>{b.innerHTML=`<h3>어디에 저장할까요?</h3><p>원본에 저장하면 휴대폰에 있는 "${esc(d.handle.name)}" 파일이 고친 내용으로 바뀌어요.</p><div class="row end"><button class="btn" data-a="copy">사본으로 내려받기</button><button class="btn primary" data-a="orig">원본에 저장</button></div>`;b.onclick=e=>{const a=e.target.dataset.a;if(a)close(a)}});
+    if(!where)return;
+  }
+  loading(true,'파일 만드는 중…');
+  try{const {bytes,name}=await buildFile();loading(false);
+    if(where==='orig'){try{await saveToHandle(d.handle,bytes.slice(0));d.dirty=false;setTitle();toast('원본 파일에 저장했어요');return}catch(e){console.warn('save orig',e);toast('원본에 저장하지 못해 사본으로 내려받아요',3000)}}
+    await saveBytes(name,bytes)}
+  catch(e){loading(false);console.error(e);toast('저장 파일을 만들지 못했어요: '+(e.message||e))}
+};
 
 let persistT;
 function markDirty(){doc.dirty=true;setTitle();clearTimeout(persistT);persistT=setTimeout(()=>persist(),1500)}
@@ -629,6 +645,15 @@ async function buildFile(){if(doc.kind==='pdf')return buildPdfFile();if(doc.view
 
 /* ========== 파일 열기 ========== */
 for(const inp of document.querySelectorAll('.file-in'))inp.onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)openFile(f)};
+/* 크롬 계열: 선택 창을 '다운로드' 폴더에서 열고(카톡 파일은 다운로드 › KakaoTalk), 마지막에 연 폴더를 기억한다 */
+const fsOk=()=>{try{return window.self===window.top&&typeof window.showOpenFilePicker==='function'}catch(e){return false}};
+const PICK_TYPES=[{description:'엑셀 · 파워포인트 · PDF · 워드',accept:{'application/pdf':['.pdf'],'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xlsm'],'application/vnd.ms-excel':['.xls'],'text/csv':['.csv'],'application/vnd.openxmlformats-officedocument.presentationml.presentation':['.pptx'],'application/vnd.openxmlformats-officedocument.wordprocessingml.document':['.docx']}}];
+async function pickWithFs(){const [h]=await window.showOpenFilePicker({id:'baro-open',startIn:'downloads',types:PICK_TYPES,excludeAcceptAllOption:false,multiple:false});openFile(await h.getFile(),h)}
+for(const inp of document.querySelectorAll('.file-in'))inp.addEventListener('click',e=>{
+  if(!fsOk()||inp.dataset.plain)return;
+  e.preventDefault();
+  pickWithFs().catch(err=>{if(err&&err.name==='AbortError')return;console.warn('picker',err);for(const x of document.querySelectorAll('.file-in'))x.dataset.plain='1';toast('파일 열기를 한 번 더 눌러 주세요')});
+});
 const dz=$('#dropZone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
@@ -639,7 +664,7 @@ async function sniffKind(buf){
   if(h.startsWith('PK')){try{const z=await JSZip.loadAsync(buf);if(z.file('ppt/presentation.xml'))return'pptx';if(z.file('xl/workbook.xml'))return'xlsx';if(z.file('word/document.xml'))return'docx'}catch(e){}}
   return null;
 }
-async function openFile(f){
+async function openFile(f,handle){
   const KNOWN=['xlsx','xlsm','xls','csv','pptx','pdf','docx'];
   let name=f.name||'파일',ext=extOf(name);if(!name.includes('.'))ext='';
   const buf=await f.arrayBuffer();
@@ -648,12 +673,13 @@ async function openFile(f){
   if(sn&&(!KNOWN.includes(ext)||(['pdf','pptx','docx'].includes(sn)&&sn!==ext))){if(ext!==sn)name+='.'+sn;ext=sn}
   if(ext==='ppt'||ext==='doc'||ext==='hwp'||ext==='hwpx'){toast('.'+ext+' 형식은 아직 열 수 없어요');return}
   if(!KNOWN.includes(ext)){toast('엑셀·PPT(.pptx)·PDF·워드(.docx) 파일을 골라 주세요');return}
-  openRecord({id:'f'+Date.now()+Math.random().toString(36).slice(2,6),name,kind:{pptx:'deck',pdf:'pdf',docx:'word'}[ext]||'sheet',buf,updated:Date.now()},true);
+  openRecord({id:'f'+Date.now()+Math.random().toString(36).slice(2,6),name,kind:{pptx:'deck',pdf:'pdf',docx:'word'}[ext]||'sheet',buf,updated:Date.now()},true,handle);
 }
-async function openRecord(rec,isNew){
+async function openRecord(rec,isNew,handle){
   loading(true);
   try{
     if(rec.kind==='sheet')await openSheetDoc(rec);else if(rec.kind==='pdf')await openPdfDoc(rec);else if(rec.kind==='word')await openWordDoc(rec);else await openDeckDoc(rec);
+    if(doc)doc.handle=handle||null;
     rec.updated=Date.now();IDB.put({...rec});
   }catch(e){console.error(e);const why=e&&e.message?String(e.message).slice(0,80):'';toast(/^암호|불러오지/.test(why)?why:'파일을 열지 못했어요. 손상됐거나 암호가 걸린 파일일 수 있어요.'+(why?' ('+why+')':''),5000);show('home')}
   loading(false);
