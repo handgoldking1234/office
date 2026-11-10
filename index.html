@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>바로오피스</title>
+<meta name="description" content="광고 없이 휴대폰에서 엑셀·PPT 파일을 바로 열고 고치는 무료 웹 오피스">
+<meta name="theme-color" content="#16804a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="바로오피스">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* 레이아웃: 상단 앱바 + 본문(홈/엑셀/PPT 화면 전환) + 하단 도구막대. 모바일 한 손 조작 우선 */
+:root{
+  --bg:#f3f5f4; --card:#ffffff; --ink:#15191c; --sub:#5f6b70; --line:#dde3e1;
+  --xl:#16804a; --xl-soft:#e3f3ea; --pp:#c8502a; --pp-soft:#fbe9e2; --accent:#1d5fd1;
+  --grid-head:#eef1f0; --grid-line:#e3e7e6; --sel:#16804a;
+  --display:"IBM Plex Sans KR","Noto Sans KR",system-ui,sans-serif;
+  --body:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121615; --card:#1b201f; --ink:#e9eeec; --sub:#9aa7a3; --line:#2c3432;
+  --xl:#3fbf7a; --xl-soft:#1d3328; --pp:#ef7a52; --pp-soft:#3a251d; --accent:#6c9cf0;
+  --grid-head:#202725; --grid-line:#2a3230; --sel:#3fbf7a; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#121615; --card:#1b201f; --ink:#e9eeec; --sub:#9aa7a3; --line:#2c3432;
+  --xl:#3fbf7a; --xl-soft:#1d3328; --pp:#ef7a52; --pp-soft:#3a251d; --accent:#6c9cf0;
+  --grid-head:#202725; --grid-line:#2a3230; --sel:#3fbf7a; color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;-webkit-tap-highlight-color:transparent;overflow:hidden}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:flex;flex-direction:column;height:100%;padding-top:env(safe-area-inset-top)}
+.bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line);min-height:56px}
+.bar .title{flex:1;min-width:0;font-family:var(--display);font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;border:0;text-align:left;padding:4px 0;cursor:pointer}
+.bar .title small{display:block;font-family:var(--body);font-weight:400;font-size:12px;color:var(--sub)}
+.ib{border:0;background:transparent;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;cursor:pointer;flex:none}
+.ib:hover{background:var(--grid-head)}
+.ib svg{width:22px;height:22px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.xl{background:var(--xl);border-color:var(--xl);color:#fff}
+.btn.pp{background:var(--pp);border-color:var(--pp);color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+.view{flex:1;min-height:0;display:none;flex-direction:column}
+.view.on{display:flex}
+
+/* 홈 */
+#home{overflow:auto}
+.home{max-width:720px;width:100%;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:22px}
+.hero h1{font-family:var(--display);font-size:26px;line-height:1.3;margin:4px 0 6px;text-wrap:balance}
+.hero p{margin:0;color:var(--sub);line-height:1.6}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{font-size:12px;padding:4px 10px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--sub)}
+.open-card{position:relative;border:2px dashed var(--line);border-radius:16px;background:var(--card);padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;cursor:pointer}
+.file-hit{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0;z-index:1}
+.open-card:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.note a{color:var(--accent);font-weight:500}
+.open-card.drag{border-color:var(--accent)}
+.open-card strong{font-family:var(--display);font-size:18px}
+.open-card span{color:var(--sub);font-size:13px}
+.new-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.new-btn{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--card);cursor:pointer;text-align:left}
+.new-btn .ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-weight:700;font-family:var(--display);flex:none}
+.new-btn.x .ic{background:var(--xl-soft);color:var(--xl)}
+.new-btn.p .ic{background:var(--pp-soft);color:var(--pp)}
+.new-btn b{display:block;font-size:15px}
+.new-btn small{color:var(--sub);font-size:12px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.sec-h h2{font-family:var(--display);font-size:16px;margin:0}
+.sec-h span{font-size:12px;color:var(--sub)}
+.recent{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.rc{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;text-align:left;width:100%}
+.rc:last-child{border-bottom:0}
+.rc .ic{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.rc .ic.x{background:var(--xl-soft);color:var(--xl)} .rc .ic.p{background:var(--pp-soft);color:var(--pp)}
+.rc .nm{flex:1;min-width:0}
+.rc .nm b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc .nm small{color:var(--sub);font-size:12px;font-variant-numeric:tabular-nums}
+.rc .del{color:var(--sub)}
+.empty{padding:18px;color:var(--sub);font-size:14px;text-align:center}
+.note{font-size:12px;color:var(--sub);line-height:1.6}
+
+/* 엑셀 */
+.fx{display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--card);border-bottom:1px solid var(--line)}
+.fx .addr{min-width:58px;padding:7px 8px;border-radius:8px;background:var(--grid-head);font-size:13px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+.fx input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:8px 10px;font:inherit;font-size:16px}
+.gridwrap{flex:1;min-height:0;overflow:auto;background:var(--card);overscroll-behavior:contain;position:relative}
+table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:13px;font-variant-numeric:tabular-nums}
+.grid td,.grid th{border-right:1px solid var(--grid-line);border-bottom:1px solid var(--grid-line);height:26px;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.grid thead th{position:sticky;top:0;background:var(--grid-head);z-index:2;font-weight:500;color:var(--sub);font-size:12px;text-align:center}
+.grid tbody th{position:sticky;left:0;background:var(--grid-head);z-index:1;font-weight:500;color:var(--sub);font-size:12px;text-align:center}
+.grid thead th:first-child{left:0;z-index:3}
+.grid td{cursor:cell;background-clip:padding-box}
+.grid td.num{text-align:right}
+.grid td.sel{box-shadow:inset 0 0 0 2px var(--sel)}
+.grid th.hl{background:var(--xl-soft);color:var(--xl)}
+.more{padding:12px;text-align:center}
+.tabs{display:flex;align-items:center;gap:4px;padding:6px 8px calc(6px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);overflow-x:auto}
+.tab{border:0;background:transparent;padding:7px 12px;border-radius:8px;white-space:nowrap;cursor:pointer;color:var(--sub);font-size:14px}
+.tab.on{background:var(--xl-soft);color:var(--xl);font-weight:700}
+.tabs .sp{flex:1}
+.zoom{display:flex;align-items:center;gap:2px;flex:none}
+.zoom span{font-size:12px;color:var(--sub);min-width:38px;text-align:center;font-variant-numeric:tabular-nums}
+
+/* PPT */
+.slides{flex:1;min-height:0;overflow:auto;padding:14px 12px 24px;display:flex;flex-direction:column;align-items:center;gap:18px}
+.sw{display:flex;flex-direction:column;gap:6px}
+.sw .lbl{font-size:12px;color:var(--sub);display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.sw.cur .lbl{color:var(--pp);font-weight:700}
+.slide{position:relative;overflow:hidden;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.06);border-radius:4px;color:#000}
+.sw.cur .slide{box-shadow:0 0 0 2px var(--pp),0 2px 8px rgba(0,0,0,.2)}
+.shp{position:absolute;box-sizing:border-box}
+.shp.ed{cursor:pointer}
+.shp.sel{outline:2px dashed var(--accent);outline-offset:1px;touch-action:none;cursor:move}
+.tx{position:absolute;inset:0;display:flex;flex-direction:column;overflow:visible;word-break:keep-all;overflow-wrap:break-word}
+.tx .pa{margin:0}
+.shp img{width:100%;height:100%;display:block;object-fit:fill;pointer-events:none}
+.shp table{border-collapse:collapse;width:100%;height:100%;table-layout:fixed}
+.shp td{border:1px solid rgba(0,0,0,.25);vertical-align:top;overflow:hidden}
+.tools{display:flex;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);overflow-x:auto}
+.tools .btn{padding:8px 12px;font-size:14px}
+.tools .sp{flex:1}
+
+/* 바텀시트 / 대화상자 */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.scrim.on{display:flex}
+.sheet{background:var(--card);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;max-height:90%;overflow:auto}
+@media (min-width:600px){.scrim{align-items:center}.sheet{border-radius:18px}}
+.sheet h3{margin:0;font-family:var(--display);font-size:17px}
+.sheet p{margin:0;color:var(--sub);line-height:1.6;font-size:14px}
+.sheet textarea,.sheet input[type=text]{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:10px;font:inherit;font-size:16px}
+.sheet textarea{min-height:140px;resize:vertical;line-height:1.5}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row.end{justify-content:flex-end}
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stepper button{border:0;background:var(--grid-head);width:36px;height:36px;cursor:pointer;font-size:18px}
+.stepper span{min-width:56px;text-align:center;font-size:14px;font-variant-numeric:tabular-nums}
+.tg{border:1px solid var(--line);background:var(--card);border-radius:10px;width:40px;height:38px;font-weight:700;cursor:pointer}
+.tg.on{background:var(--ink);color:var(--bg)}
+.sws{display:flex;gap:6px;flex-wrap:wrap}
+.swc{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.swc.on{outline:2px solid var(--accent);outline-offset:2px}
+.swc.keep{background:conic-gradient(#e33,#fc3,#3c6,#39f,#c3f,#e33)}
+
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;text-align:center}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+.loading{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;place-items:center;z-index:70;color:#fff;font-weight:500}
+.loading.on{display:grid}
+
+/* 발표 모드 */
+.show{position:fixed;inset:0;background:#000;z-index:80;display:none;align-items:center;justify-content:center;touch-action:pan-y}
+.show.on{display:flex}
+.show .cnt{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#aaa;font-size:13px;font-variant-numeric:tabular-nums;pointer-events:none}
+.show .x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:10px;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:10px;padding:8px 12px;cursor:pointer}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <button class="ib" id="backBtn" aria-label="홈으로" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="title" id="titleBtn">바로오피스<small>엑셀 · 파워포인트 열기와 수정</small></button>
+    <button class="btn primary" id="saveBtn" style="display:none">내려받기</button>
+  </header>
+
+  <!-- 홈 -->
+  <section class="view on" id="home">
+    <div class="home">
+      <div class="hero">
+        <h1>광고 없이 바로 열고, 바로 고치기</h1>
+        <p>휴대폰에 받은 엑셀·PPT 파일을 열어서 숫자와 글자를 고치고 다시 저장합니다. 파일은 서버로 올라가지 않고 이 기기 안에서만 처리돼요.</p>
+        <div class="chips"><span class="chip">.xlsx · .xls · .csv</span><span class="chip">.pptx</span><span class="chip">광고 없음</span><span class="chip">로그인 없음</span><span class="chip">원본 서식 유지</span></div>
+      </div>
+      <div class="open-card" id="dropZone">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3"/></svg>
+        <strong>파일 열기</strong>
+        <span>탭해서 고르거나, PC에서는 여기로 끌어다 놓으세요</span>
+        <input type="file" id="fileIn" class="file-hit" aria-label="파일 열기">
+      </div>
+      <p class="note" id="appHint" hidden>Claude 앱 안에서 눌러도 선택 창이 안 뜨면 <a href="https://claude.ai/artifact/CBSrjs4D41EKJtGPq6PDWS" target="_blank" rel="noopener">크롬·사파리 브라우저에서 열기</a>를 눌러 주세요. 브라우저에서는 바로 열려요.</p>
+      <div class="new-row">
+        <button class="new-btn x" id="newSheet"><span class="ic">X</span><span><b>새 엑셀</b><small>빈 시트로 시작</small></span></button>
+        <button class="new-btn p" id="newDeck"><span class="ic">P</span><span><b>새 PPT</b><small>16:9 빈 발표 자료</small></span></button>
+      </div>
+      <div>
+        <div class="sec-h"><h2>최근 파일</h2><span>이 기기에 자동 보관 · 최대 20개</span></div>
+        <div class="recent" id="recent"><div class="empty">아직 연 파일이 없어요. 위에서 파일을 열거나 예시로 먼저 써 보세요.</div></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="sampleX">예시 엑셀 열기</button>
+          <button class="btn" id="sampleP">예시 PPT 열기</button>
+        </div>
+      </div>
+      <p class="note">수정할 수 있는 것: 엑셀 셀 값과 수식(SUM·AVERAGE·IF 등 자동 계산), 시트 이동 / PPT 글자·크기·굵기·색, 글상자 추가·이동·복제·삭제, 슬라이드 추가·복제·삭제·순서 변경, 발표 모드. 원본 파일의 서식·이미지·차트는 그대로 두고 고친 부분만 바꿔 저장합니다. 옛날 형식(.ppt)은 열 수 없어요.</p>
+    </div>
+  </section>
+
+  <!-- 엑셀 -->
+  <section class="view" id="sheetView">
+    <div class="fx">
+      <div class="addr" id="addr">A1</div>
+      <input id="fxIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="값 또는 =SUM(A1:A5)" enterkeyhint="done" aria-label="셀 내용">
+    </div>
+    <div class="gridwrap" id="gridWrap"></div>
+    <div class="tabs" id="tabs"></div>
+  </section>
+
+  <!-- PPT -->
+  <section class="view" id="deckView">
+    <div class="slides" id="slides"></div>
+    <div class="tools" id="deckTools"></div>
+  </section>
+</div>
+
+<div class="scrim" id="scrim"><div class="sheet" id="sheetBox" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast"></div>
+<div class="loading" id="loading">여는 중…</div>
+<div class="show" id="show"><button class="x" id="showX">닫기</button><div class="cnt" id="showCnt"></div></div>
+
+<script>
+"use strict";
+/* ========== 공통 유틸 ========== */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
+let toastT;function toast(m,ms=2200){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),ms)}
+function loading(on,msg){const l=$('#loading');l.textContent=msg||'여는 중…';l.classList.toggle('on',!!on)}
+const extOf=n=>(n.split('.').pop()||'').toLowerCase();
+const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+'MB':Math.max(1,Math.round(b/1024))+'KB';
+function fmtDate(t){const d=new Date(t),n=new Date();const p=x=>String(x).padStart(2,'0');return d.toDateString()===n.toDateString()?`오늘 ${p(d.getHours())}:${p(d.getMinutes())}`:`${d.getMonth()+1}월 ${d.getDate()}일`}
+
+/* 바텀시트 대화상자 */
+function openSheet(build){return new Promise(res=>{const box=$('#sheetBox');box.innerHTML='';const close=v=>{$('#scrim').classList.remove('on');res(v)};build(box,close);$('#scrim').classList.add('on');$('#scrim').onclick=e=>{if(e.target.id==='scrim')close(null)};const f=box.querySelector('textarea,input');if(f)setTimeout(()=>f.focus(),60)})}
+function ask(title,msg,ok='확인',danger){return openSheet((b,close)=>{b.innerHTML=`<h3>${esc(title)}</h3>${msg?`<p>${esc(msg)}</p>`:''}<div class="row end"><button class="btn" data-a="n">취소</button><button class="btn ${danger?'pp':'primary'}" data-a="y">${esc(ok)}</button></div>`;b.onclick=e=>{const a=e.target.dataset.a;if(a)close(a==='y')}})}
+function promptText(title,val){return openSheet((b,close)=>{b.innerHTML=`<h3>${esc(title)}</h3><input type="text" id="pt" value="${esc(val||'')}"><div class="row end"><button class="btn" data-a="n">취소</button><button class="btn primary" data-a="y">확인</button></div>`;const i=$('#pt',b);i.onkeydown=e=>{if(e.key==='Enter')close(i.value)};b.onclick=e=>{const a=e.target.dataset.a;if(a)close(a==='y'?i.value:null)}})}
+
+/* IndexedDB 최근 파일 */
+const IDB={db:null,
+  open(){if(this.db)return Promise.resolve(this.db);return new Promise((res,rej)=>{try{const q=indexedDB.open('baro-office',1);q.onupgradeneeded=()=>q.result.createObjectStore('files',{keyPath:'id'});q.onsuccess=()=>{this.db=q.result;res(q.result)};q.onerror=()=>rej(q.error)}catch(e){rej(e)}})},
+  async run(mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction('files',mode);const r=fn(t.objectStore('files'));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error)})},
+  put(r){return this.run('readwrite',s=>s.put(r)).catch(()=>{})},
+  get(id){return this.run('readonly',s=>s.get(id)).catch(()=>null)},
+  del(id){return this.run('readwrite',s=>s.delete(id)).catch(()=>{})},
+  all(){return this.run('readonly',s=>s.getAll()).then(a=>a||[]).catch(()=>[])}
+};
+async function refreshRecent(){
+  const list=(await IDB.all()).sort((a,b)=>b.updated-a.updated);
+  for(const r of list.slice(20))IDB.del(r.id);
+  const box=$('#recent');
+  if(!list.length){box.innerHTML='<div class="empty">아직 연 파일이 없어요. 위에서 파일을 열거나 예시로 먼저 써 보세요.</div>';return}
+  box.innerHTML='';
+  for(const r of list.slice(0,20)){
+    const x=r.kind==='sheet';
+    const b=el('button','rc',`<span class="ic ${x?'x':'p'}">${esc(extOf(r.name).toUpperCase().slice(0,4))}</span><span class="nm"><b>${esc(r.name)}</b><small>${fmtDate(r.updated)} · ${fmtSize(r.buf.byteLength)}</small></span><span class="ib del" data-del="${esc(r.id)}" aria-label="목록에서 지우기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>`);
+    b.onclick=async e=>{if(e.target.closest('[data-del]')){e.stopPropagation();if(await ask('목록에서 지울까요?',`"${r.name}" 보관본이 이 기기에서 지워집니다.`,'지우기',true)){await IDB.del(r.id);refreshRecent()}return}openRecord(r)};
+    box.appendChild(b);
+  }
+}
+
+/* 저장(내려받기) */
+let dlPromise=null;
+function getDownloads(){if(!dlPromise){dlPromise=(window.claude&&typeof window.claude.use==='function')?window.claude.use('downloads').catch(()=>null):Promise.resolve(null)}return dlPromise}
+getDownloads();
+async function saveBytes(name,bytes){
+  const dl=await Promise.race([getDownloads(),new Promise(r=>setTimeout(()=>r(undefined),1500))]);
+  if(dl){try{await dl.save({filename:name,data:new Blob([bytes])});toast('내려받기를 시작했어요');return}catch(e){if(e&&e.code==='declined')return;if(e&&e.code==='rate_limited'){toast('잠시 후 다시 눌러 주세요');return}}}
+  try{const ext=extOf(name);const mime={xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',csv:'text/csv'}[ext]||'application/octet-stream';
+    const url=URL.createObjectURL(new Blob([bytes],{type:mime}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('내려받기를 시작했어요')}
+  catch(e){toast('이 화면에서는 내려받기가 막혀 있어요')}
+}
+
+/* ========== 화면 전환 ========== */
+let doc=null;
+function show(view){
+  for(const v of document.querySelectorAll('.view'))v.classList.toggle('on',v.id===view);
+  const home=view==='home';
+  $('#backBtn').style.display=home?'none':'';$('#saveBtn').style.display=home?'none':'';
+  if(home){$('#titleBtn').innerHTML='바로오피스<small>엑셀 · 파워포인트 열기와 수정</small>';doc=null;refreshRecent()}
+}
+function setTitle(){if(!doc)return;$('#titleBtn').innerHTML=`${esc(doc.rec.name)}<small id="stat">${doc.kind==='sheet'?'엑셀':'파워포인트'} · ${doc.dirty?'수정됨 · 이 기기에 자동 보관':'원본 그대로'}</small>`}
+$('#backBtn').onclick=async()=>{if(doc&&doc.dirty)await persist(true);show('home')};
+$('#titleBtn').onclick=async()=>{if(!doc)return;const ext=extOf(doc.rec.name);const base=doc.rec.name.replace(/\.[^.]+$/,'');const v=await promptText('파일 이름 바꾸기',base);if(v&&v.trim()){doc.rec.name=v.trim()+'.'+ext;setTitle();persist(true)}};
+$('#saveBtn').onclick=async()=>{if(!doc)return;loading(true,'파일 만드는 중…');try{const {bytes,name}=await buildFile();loading(false);await saveBytes(name,bytes)}catch(e){loading(false);console.error(e);toast('저장 파일을 만들지 못했어요: '+(e.message||e))}};
+
+let persistT;
+function markDirty(){doc.dirty=true;setTitle();clearTimeout(persistT);persistT=setTimeout(()=>persist(),1500)}
+async function persist(now){if(!doc||!doc.dirty)return;clearTimeout(persistT);try{const d=doc;const {bytes}=await buildFile();d.rec.buf=bytes;d.rec.updated=Date.now();await IDB.put({...d.rec})}catch(e){console.warn('autosave',e)}}
+async function buildFile(){if(doc.kind==='sheet')return buildSheetFile();return buildDeckFile()}
+
+/* ========== 파일 열기 ========== */
+$('#fileIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f)openFile(f)};
+const dz=$('#dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)openFile(f)});
+async function openFile(f){
+  const ext=extOf(f.name);
+  if(ext==='ppt'||ext==='doc'||ext==='hwp'){toast('.'+ext+' 형식은 아직 열 수 없어요');return}
+  if(!['xlsx','xlsm','xls','csv','pptx'].includes(ext)){toast('엑셀(.xlsx .xls .csv) 또는 PPT(.pptx) 파일을 골라 주세요');return}
+  const buf=await f.arrayBuffer();
+  openRecord({id:'f'+Date.now()+Math.random().toString(36).slice(2,6),name:f.name,kind:ext==='pptx'?'deck':'sheet',buf,updated:Date.now()},true);
+}
+async function openRecord(rec,isNew){
+  loading(true);
+  try{
+    if(rec.kind==='sheet')await openSheetDoc(rec);else await openDeckDoc(rec);
+    rec.updated=Date.now();IDB.put({...rec});
+  }catch(e){console.error(e);toast('파일을 열지 못했어요. 손상됐거나 암호가 걸린 파일일 수 있어요.',3500);show('home')}
+  loading(false);
+}
+
+/* ================================================================
+   엑셀
+   ================================================================ */
+const XNS='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+const RELNS='http://schemas.openxmlformats.org/package/2006/relationships';
+const CTNS='http://schemas.openxmlformats.org/package/2006/content-types';
+const parseXml=s=>new DOMParser().parseFromString(s,'application/xml');
+const serXml=d=>{let s=new XMLSerializer().serializeToString(d);if(!/^<\?xml/.test(s))s='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+s;return s};
+const kids=(e,n)=>e?[...e.children].filter(c=>c.localName===n):[];
+const kid=(e,n)=>{if(!e)return null;for(const c of e.children)if(c.localName===n)return c;return null};
+
+async function openSheetDoc(rec){
+  const ext=extOf(rec.name);
+  let wb;
+  if(ext==='csv'){let txt=new TextDecoder('utf-8').decode(rec.buf);if(txt.includes('\uFFFD'))try{txt=new TextDecoder('euc-kr').decode(rec.buf)}catch(e){}wb=XLSX.read(txt.replace(/^\uFEFF/,''),{type:'string',raw:false})}
+  else wb=XLSX.read(new Uint8Array(rec.buf),{type:'array',cellFormula:true,cellNF:true,cellStyles:true});
+  let zip=null,map={};
+  if(ext==='xlsx'||ext==='xlsm'){try{zip=await JSZip.loadAsync(rec.buf);map=await sheetPathMap(zip)}catch(e){zip=null}}
+  doc={kind:'sheet',rec,wb,zip,map,edits:{},si:0,sel:{r:0,c:0},rowLimit:500,zoom:1,dirty:false,patch:!!zip&&Object.keys(map).length===wb.SheetNames.length};
+  for(const n of wb.SheetNames)recalc(wb.Sheets[n]);
+  show('sheetView');setTitle();renderTabs();renderGrid();selectCell(0,0);
+}
+async function sheetPathMap(zip){
+  const wbx=parseXml(await zip.file('xl/workbook.xml').async('string'));
+  const rels=parseXml(await zip.file('xl/_rels/workbook.xml.rels').async('string'));
+  const rmap={};for(const r of rels.getElementsByTagNameNS(RELNS,'Relationship'))rmap[r.getAttribute('Id')]=r.getAttribute('Target');
+  const m={};
+  for(const s of wbx.getElementsByTagNameNS(XNS,'sheet')){
+    const id=s.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id')||s.getAttribute('r:id');
+    let t=rmap[id];if(!t)continue;t=t.startsWith('/')?t.slice(1):'xl/'+t.replace(/^\.\//,'');
+    m[s.getAttribute('name')]=t;
+  }
+  return m;
+}
+const curWs=()=>doc.wb.Sheets[doc.wb.SheetNames[doc.si]];
+
+function renderTabs(){
+  const t=$('#tabs');t.innerHTML='';
+  doc.wb.SheetNames.forEach((n,i)=>{const b=el('button','tab'+(i===doc.si?' on':''),esc(n));b.onclick=()=>{$('#fxIn').blur();doc.si=i;doc.rowLimit=500;renderTabs();renderGrid();selectCell(0,0);$('#gridWrap').scrollTo(0,0)};t.appendChild(b)});
+  if(!doc.patch){const a=el('button','tab','+ 시트');a.onclick=()=>{let k=doc.wb.SheetNames.length+1;while(doc.wb.SheetNames.includes('Sheet'+k))k++;XLSX.utils.book_append_sheet(doc.wb,XLSX.utils.aoa_to_sheet([[]]),'Sheet'+k);doc.si=doc.wb.SheetNames.length-1;renderTabs();renderGrid();selectCell(0,0);markDirty()};t.appendChild(a)}
+  t.appendChild(el('span','sp'));
+  const z=el('div','zoom',`<button class="ib" data-z="-1" aria-label="축소">−</button><span>${Math.round(doc.zoom*100)}%</span><button class="ib" data-z="1" aria-label="확대">+</button>`);
+  z.onclick=e=>{const d=e.target.closest('[data-z]');if(!d)return;doc.zoom=Math.min(2,Math.max(.5,Math.round((doc.zoom+ +d.dataset.z*.1)*10)/10));const g=$('table.grid');if(g)g.style.zoom=doc.zoom;z.querySelector('span').textContent=Math.round(doc.zoom*100)+'%'};
+  t.appendChild(z);
+}
+
+function cellText(c){
+  if(!c)return'';
+  if(c.w!=null)return c.w;
+  if(c.v==null)return'';
+  if(c.t==='n')return fmtNum(c.v,c.z);
+  if(c.t==='b')return c.v?'TRUE':'FALSE';
+  return String(c.v);
+}
+function fmtNum(v,z){if(z&&z!=='General'){try{return XLSX.SSF.format(z,v)}catch(e){}}if(!isFinite(v))return String(v);return String(+v.toPrecision(12))}
+function cellBg(c){const s=c&&c.s;if(!s)return'';const fg=s.fgColor;if(s.patternType&&s.patternType!=='none'&&fg&&fg.rgb&&/^[0-9A-F]{6,8}$/i.test(fg.rgb)){const h=fg.rgb.slice(-6);if(h.toUpperCase()!=='FFFFFF')return'#'+h}return''}
+
+function renderGrid(){
+  const ws=curWs(),U=XLSX.utils;
+  const rg=ws['!ref']?U.decode_range(ws['!ref']):{s:{r:0,c:0},e:{r:0,c:0}};
+  const nR=Math.min(Math.max(rg.e.r+1+30,60),doc.rowLimit),nC=Math.min(Math.max(rg.e.c+1+6,15),400);
+  doc.nR=nR;doc.nC=nC;
+  const cover=new Set(),start={};
+  for(const m of ws['!merges']||[]){start[m.s.r+','+m.s.c]=[m.e.r-m.s.r+1,m.e.c-m.s.c+1];for(let r=m.s.r;r<=m.e.r;r++)for(let c=m.s.c;c<=m.e.c;c++)if(r!==m.s.r||c!==m.s.c)cover.add(r+','+c)}
+  const cols=ws['!cols']||[],rows=ws['!rows']||[];
+  const h=['<table class="grid" style="zoom:'+doc.zoom+'"><colgroup><col style="width:44px">'];
+  for(let c=0;c<nC;c++){const ci=cols[c];let w=ci?(ci.hidden?0:(ci.wpx||(ci.wch?ci.wch*7+10:(ci.width?ci.width*7+5:0)))):0;if(!w)w=84;h.push(`<col style="width:${Math.max(w,24)}px">`)}
+  h.push('</colgroup><thead><tr><th></th>');
+  for(let c=0;c<nC;c++)h.push(`<th data-ch="${c}">${U.encode_col(c)}</th>`);
+  h.push('</tr></thead><tbody>');
+  for(let r=0;r<nR;r++){
+    const ri=rows[r];const rh=ri&&ri.hpx?`height:${Math.max(ri.hpx,18)}px`:'';
+    h.push(`<tr style="${ri&&ri.hidden?'display:none':rh}"><th data-rh="${r}">${r+1}</th>`);
+    for(let c=0;c<nC;c++){
+      const k=r+','+c;if(cover.has(k))continue;
+      const a=U.encode_cell({r,c}),cell=ws[a];
+      const sp=start[k];const span=sp?` rowspan="${sp[0]}" colspan="${sp[1]}"`:'';
+      const bg=cellBg(cell);
+      const cls=cell&&(cell.t==='n')?' class="num"':'';
+      h.push(`<td data-r="${r}" data-c="${c}"${span}${cls}${bg?` style="background:${bg};color:#111"`:''}>${esc(cellText(cell))}</td>`);
+    }
+    h.push('</tr>');
+  }
+  h.push('</tbody></table>');
+  if(rg.e.r+1>nR)h.push(`<div class="more"><button class="btn" id="moreRows">아래 500행 더 보기 (전체 ${rg.e.r+1}행)</button></div>`);
+  const w=$('#gridWrap');w.innerHTML=h.join('');
+  const mb=$('#moreRows');if(mb)mb.onclick=()=>{doc.rowLimit+=500;const st=w.scrollTop;renderGrid();w.scrollTop=st;selectCell(doc.sel.r,doc.sel.c,true)};
+}
+function tdAt(r,c){return $(`#gridWrap td[data-r="${r}"][data-c="${c}"]`)}
+let fxOrig='';
+function selectCell(r,c,noScroll){
+  const U=XLSX.utils;
+  r=Math.max(0,Math.min(r,doc.nR-1));c=Math.max(0,Math.min(c,doc.nC-1));
+  for(const x of document.querySelectorAll('#gridWrap .sel,#gridWrap .hl'))x.classList.remove('sel','hl');
+  doc.sel={r,c};
+  const td=tdAt(r,c);if(td){td.classList.add('sel');if(!noScroll)td.scrollIntoView({block:'nearest',inline:'nearest'})}
+  const ch=$(`#gridWrap th[data-ch="${c}"]`),rh=$(`#gridWrap th[data-rh="${r}"]`);if(ch)ch.classList.add('hl');if(rh)rh.classList.add('hl');
+  const a=U.encode_cell({r,c});$('#addr').textContent=a;
+  const cell=curWs()[a];
+  fxOrig=cell?(cell.f?'='+cell.f:(cell.t==='n'&&cell.z&&/%/.test(cell.z)?cellText(cell):(cell.v!=null?(cell.t==='b'?(cell.v?'TRUE':'FALSE'):String(cell.v)):''))):'';
+  $('#fxIn').value=fxOrig;
+}
+$('#gridWrap').addEventListener('click',e=>{const td=e.target.closest('td[data-r]');if(!td)return;selectCell(+td.dataset.r,+td.dataset.c,true)});
+$('#gridWrap').addEventListener('dblclick',e=>{const td=e.target.closest('td[data-r]');if(!td)return;const i=$('#fxIn');i.focus();i.setSelectionRange(i.value.length,i.value.length)});
+const fxIn=$('#fxIn');
+function commitFx(){if(doc&&doc.kind==='sheet'&&fxIn.value!==fxOrig){setCell(doc.sel.r,doc.sel.c,fxIn.value);fxOrig=fxIn.value}}
+fxIn.addEventListener('keydown',e=>{
+  if(e.isComposing)return;
+  if(e.key==='Enter'){e.preventDefault();commitFx();selectCell(doc.sel.r+1,doc.sel.c)}
+  else if(e.key==='Tab'){e.preventDefault();commitFx();selectCell(doc.sel.r,doc.sel.c+1)}
+  else if(e.key==='Escape'){fxIn.value=fxOrig;fxIn.blur()}
+});
+fxIn.addEventListener('blur',commitFx);
+document.addEventListener('keydown',e=>{
+  if(!doc||doc.kind!=='sheet'||$('#scrim').classList.contains('on'))return;
+  if(document.activeElement===fxIn)return;
+  const k=e.key,s=doc.sel;
+  const mv={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1],Enter:[1,0],Tab:[0,1]}[k];
+  if(mv){e.preventDefault();selectCell(s.r+mv[0],s.c+mv[1]);return}
+  if(k==='Delete'||k==='Backspace'){e.preventDefault();setCell(s.r,s.c,'');selectCell(s.r,s.c,true);return}
+  if(k.length===1&&!e.ctrlKey&&!e.metaKey&&!e.altKey){fxIn.focus();fxIn.value='';}
+});
+
+function setCell(r,c,text){
+  const U=XLSX.utils,ws=curWs(),a=U.encode_cell({r,c}),name=doc.wb.SheetNames[doc.si];
+  const old=ws[a]||{};let e,cell;
+  const tt=text.trim();
+  if(text===''){e={k:'e'};cell=old.s?{t:'z',s:old.s}:null}
+  else if(tt[0]==='='&&tt.length>1){const f=tt.slice(1);e={k:'f',v:f};cell={t:'n',f,v:0,s:old.s,z:old.z}}
+  else if(/^[-+]?(\d{1,3}(,\d{3})+|\d+)?(\.\d+)?([eE][-+]?\d+)?%?$/.test(tt)&&/\d/.test(tt)){let n=+tt.replace(/[,%]/g,'');if(tt.endsWith('%'))n/=100;e={k:'n',v:n};cell={t:'n',v:n,s:old.s,z:old.z||(tt.endsWith('%')?'0%':(tt.includes(',')?'#,##0':undefined))}}
+  else if(/^(true|false)$/i.test(tt)){e={k:'b',v:/^true$/i.test(tt)};cell={t:'b',v:e.v,s:old.s}}
+  else{e={k:'s',v:text};cell={t:'s',v:text,s:old.s}}
+  if(cell){for(const k in cell)if(cell[k]===undefined)delete cell[k];ws[a]=cell}else delete ws[a];
+  if(cell&&cell.z&&!doc.patch)XLSX.utils.format_cell(cell);
+  const rg=ws['!ref']?U.decode_range(ws['!ref']):{s:{r,c},e:{r,c}};
+  if(text!==''){rg.s.r=Math.min(rg.s.r,r);rg.s.c=Math.min(rg.s.c,c);rg.e.r=Math.max(rg.e.r,r);rg.e.c=Math.max(rg.e.c,c);ws['!ref']=U.encode_range(rg)}
+  (doc.edits[name]=doc.edits[name]||{})[a]=e;
+  recalc(ws);
+  refreshCells(ws);
+  markDirty();
+}
+function refreshCells(ws){
+  for(const td of document.querySelectorAll('#gridWrap td[data-r]')){
+    const a=XLSX.utils.encode_cell({r:+td.dataset.r,c:+td.dataset.c});const c=ws[a];
+    const t=cellText(c);if(td.textContent!==t)td.textContent=t;
+    td.classList.toggle('num',!!c&&c.t==='n');
+  }
+}
+
+/* --- 간단 수식 계산기 --- */
+class FErr{constructor(c){this.code=c}}
+class Unsup{}
+function recalc(ws){
+  const keys=Object.keys(ws).filter(k=>k[0]!=='!'&&ws[k]&&ws[k].f);
+  for(let pass=0;pass<4;pass++){
+    let changed=false;
+    for(const k of keys){const c=ws[k];let v;
+      try{v=evalFormula(c.f,ws)}catch(e){if(e instanceof FErr)v=e;else continue}
+      if(v&&v.range)v=v.range[0];
+      let nt,nv,nw;
+      if(v instanceof FErr){nt='e';nv=v.code;nw=v.code}
+      else if(typeof v==='number'){nt='n';nv=v;nw=fmtNum(v,c.z)}
+      else if(typeof v==='boolean'){nt='b';nv=v;nw=v?'TRUE':'FALSE'}
+      else{nt='s';nv=v==null?'':String(v);nw=nv}
+      if(c.v!==nv||c.t!==nt){changed=true}
+      c.t=nt;c.v=nv;c.w=nw;
+    }
+    if(!changed)break;
+  }
+}
+function tokenize(s){
+  const T=[];let i=0;
+  while(i<s.length){
+    const ch=s[i],rest=s.slice(i);let m;
+    if(/\s/.test(ch)){i++;continue}
+    if(ch==='"'){let j=i+1,str='';while(j<s.length){if(s[j]==='"'){if(s[j+1]==='"'){str+='"';j+=2;continue}break}str+=s[j++]}T.push({k:'str',v:str});i=j+1;continue}
+    if(/^('[^']+'|[A-Za-z0-9_.\uAC00-\uD7A3]+)!/.test(rest))throw new Unsup();
+    if((m=/^[A-Za-z_][A-Za-z0-9_.]*(?=\()/.exec(rest))){T.push({k:'fn',v:m[0].toUpperCase().replace(/^_XLFN\./,'')});i+=m[0].length;continue}
+    if((m=/^\$?([A-Za-z]{1,3})\$?(\d+)(:\$?([A-Za-z]{1,3})\$?(\d+))?/.exec(rest))&&!/^[A-Za-z0-9_]/.test(rest.slice(m[0].length))){
+      if(m[3])T.push({k:'rng',v:[m[1]+m[2],m[4]+m[5]]});else T.push({k:'ref',v:m[1]+m[2]});i+=m[0].length;continue}
+    if((m=/^(\d+\.?\d*([eE][-+]?\d+)?|\.\d+)/.exec(rest))){T.push({k:'num',v:+m[0]});i+=m[0].length;continue}
+    if((m=/^(TRUE|FALSE)\b/i.exec(rest))){T.push({k:'bool',v:/^TRUE$/i.test(m[0])});i+=m[0].length;continue}
+    if((m=/^(<=|>=|<>|[-+*\/^&=<>(),%:;])/.exec(rest))){T.push({k:'op',v:m[0]===';'?',':m[0]});i+=m[0].length;continue}
+    throw new Unsup();
+  }
+  return T;
+}
+function evalFormula(f,ws){
+  const T=tokenize(f);let p=0;const U=XLSX.utils;
+  const pk=()=>T[p],isOp=v=>T[p]&&T[p].k==='op'&&T[p].v===v;
+  const val=a=>{const c=ws[a.toUpperCase()];if(!c)return null;if(c.t==='e')throw new FErr(c.w||String(c.v));if(c.t==='z')return null;return c.v};
+  const rangeVals=(a,b)=>{const s=U.decode_cell(a.toUpperCase()),e=U.decode_cell(b.toUpperCase());const out=[];for(let r=Math.min(s.r,e.r);r<=Math.max(s.r,e.r);r++)for(let c=Math.min(s.c,e.c);c<=Math.max(s.c,e.c);c++)out.push(val(U.encode_cell({r,c})));return{range:out}};
+  const num=x=>{if(x&&x.range){if(x.range.length===1)x=x.range[0];else throw new FErr('#VALUE!')}if(x==null||x==='')return 0;if(typeof x==='boolean')return x?1:0;if(typeof x==='number')return x;const n=+String(x).replace(/,/g,'');if(isNaN(n))throw new FErr('#VALUE!');return n};
+  const str=x=>{if(x&&x.range)x=x.range[0];if(x==null)return'';if(typeof x==='boolean')return x?'TRUE':'FALSE';if(typeof x==='number')return String(+x.toPrecision(12));return String(x)};
+  const scal=x=>x&&x.range?(x.range.length===1?x.range[0]:x.range[0]):x;
+  function cmp(){let a=cat();while(pk()&&pk().k==='op'&&['=','<>','<','>','<=','>='].includes(pk().v)){const o=T[p++].v;const b=cat();let x=scal(a),y=scal(b);if(x==null)x=typeof y==='string'?'':0;if(y==null)y=typeof x==='string'?'':0;
+    if(typeof x==='string'&&typeof y==='string'){x=x.toLowerCase();y=y.toLowerCase()}
+    a={'=':x==y,'<>':x!=y,'<':x<y,'>':x>y,'<=':x<=y,'>=':x>=y}[o]}return a}
+  function cat(){let a=add();while(isOp('&')){p++;a=str(a)+str(add())}return a}
+  function add(){let a=mul();while(isOp('+')||isOp('-')){const o=T[p++].v;const b=mul();a=o==='+'?num(a)+num(b):num(a)-num(b)}return a}
+  function mul(){let a=pw();while(isOp('*')||isOp('/')){const o=T[p++].v;const b=pw();if(o==='*')a=num(a)*num(b);else{const d=num(b);if(d===0)throw new FErr('#DIV/0!');a=num(a)/d}}return a}
+  function pw(){let a=un();while(isOp('^')){p++;a=Math.pow(num(a),num(un()))}return a}
+  function un(){if(isOp('-')){p++;return -num(un())}if(isOp('+')){p++;return num(un())}let a=prim();while(isOp('%')){p++;a=num(a)/100}return a}
+  function prim(){const t=T[p++];if(!t)throw new Unsup();
+    if(t.k==='num'||t.k==='str'||t.k==='bool')return t.v;
+    if(t.k==='ref')return val(t.v);
+    if(t.k==='rng')return rangeVals(t.v[0],t.v[1]);
+    if(t.k==='op'&&t.v==='('){const v=cmp();if(!isOp(')'))throw new Unsup();p++;return v}
+    if(t.k==='fn'){p++;const args=[];if(!isOp(')')){args.push(cmp());while(isOp(',')){p++;args.push(isOp(')')||isOp(',')?null:cmp())}}if(!isOp(')'))throw new Unsup();p++;return callFn(t.v,args)}
+    throw new Unsup()}
+  function nums(args,countText){const o=[];for(const a of args){if(a&&a.range){for(const v of a.range)if(typeof v==='number')o.push(v)}else if(a!=null&&a!=='')o.push(num(a))}return o}
+  function callFn(n,a){
+    const N=nums(a);
+    switch(n){
+      case'SUM':return N.reduce((s,x)=>s+x,0);
+      case'AVERAGE':if(!N.length)throw new FErr('#DIV/0!');return N.reduce((s,x)=>s+x,0)/N.length;
+      case'MIN':return N.length?Math.min(...N):0;
+      case'MAX':return N.length?Math.max(...N):0;
+      case'COUNT':return N.length;
+      case'COUNTA':{let k=0;for(const x of a){if(x&&x.range)k+=x.range.filter(v=>v!=null&&v!=='').length;else if(x!=null)k++}return k}
+      case'PRODUCT':return N.reduce((s,x)=>s*x,1);
+      case'ROUND':case'ROUNDUP':case'ROUNDDOWN':{const v=num(a[0]),d=a[1]==null?0:num(a[1]),m=Math.pow(10,d);const x=v*m;const r=n==='ROUND'?Math.sign(x)*Math.round(Math.abs(x)+1e-9):n==='ROUNDUP'?Math.sign(x)*Math.ceil(Math.abs(x)-1e-9):Math.sign(x)*Math.floor(Math.abs(x)+1e-9);return r/m}
+      case'INT':return Math.floor(num(a[0]));
+      case'ABS':return Math.abs(num(a[0]));
+      case'SQRT':return Math.sqrt(num(a[0]));
+      case'POWER':return Math.pow(num(a[0]),num(a[1]));
+      case'MOD':{const d=num(a[1]);if(d===0)throw new FErr('#DIV/0!');const v=num(a[0]);return v-d*Math.floor(v/d)}
+      case'IF':{const c=scal(a[0]);const t=typeof c==='string'?c!=='':!!num(c);return t?(a[1]===undefined?true:scal(a[1])):(a[2]===undefined?false:scal(a[2]))}
+      case'IFERROR':return scal(a[0]);
+      case'AND':return a.every(x=>x&&x.range?x.range.every(v=>v==null||!!v):!!num(x));
+      case'OR':return a.some(x=>x&&x.range?x.range.some(v=>!!v):!!num(x));
+      case'NOT':return !num(a[0]);
+      case'CONCATENATE':case'CONCAT':return a.map(x=>x&&x.range?x.range.map(str).join(''):str(x)).join('');
+      case'LEN':return str(a[0]).length;
+      case'LEFT':return str(a[0]).slice(0,a[1]==null?1:num(a[1]));
+      case'RIGHT':{const s=str(a[0]),k=a[1]==null?1:num(a[1]);return k?s.slice(-k):''}
+      case'MID':return str(a[0]).substr(num(a[1])-1,num(a[2]));
+      case'UPPER':return str(a[0]).toUpperCase();
+      case'LOWER':return str(a[0]).toLowerCase();
+      case'TRIM':return str(a[0]).trim().replace(/\s+/g,' ');
+      case'SUMIF':case'COUNTIF':case'AVERAGEIF':{const rg=a[0]&&a[0].range?a[0].range:[scal(a[0])];const sr=a[2]&&a[2].range?a[2].range:rg;const test=crit(scal(a[1]));let s=0,k=0;rg.forEach((v,i)=>{if(test(v)){k++;if(typeof sr[i]==='number')s+=sr[i]}});if(n==='COUNTIF')return k;if(n==='SUMIF')return s;if(!k)throw new FErr('#DIV/0!');return s/k}
+      default:throw new Unsup();
+    }
+  }
+  function crit(c){const m=/^(<=|>=|<>|<|>|=)?(.*)$/.exec(String(c==null?'':c));const o=m[1]||'=',r=m[2];const rn=r!==''&&!isNaN(+r)?+r:null;
+    return v=>{if(rn!=null&&typeof v==='number'){return{'=':v===rn,'<>':v!==rn,'<':v<rn,'>':v>rn,'<=':v<=rn,'>=':v>=rn}[o]}const sv=String(v==null?'':v).toLowerCase(),rr=r.toLowerCase();if(o==='=')return new RegExp('^'+rr.replace(/[.+^${}()|[\]\\]/g,'\\$&').replace(/\*/g,'.*').replace(/\?/g,'.')+'$').test(sv);if(o==='<>')return sv!==rr;return false}}
+  const v=cmp();if(p<T.length)throw new Unsup();return v;
+}
+
+/* --- 엑셀 저장: 원본 xlsx의 바뀐 셀만 고쳐 서식 유지 --- */
+async function buildSheetFile(){
+  const ext=extOf(doc.rec.name);
+  if(ext==='csv'){const csv=XLSX.utils.sheet_to_csv(curWs());return{bytes:new TextEncoder().encode('\uFEFF'+csv).buffer,name:doc.rec.name}}
+  let name=doc.rec.name;if(ext==='xls')name=name.replace(/\.xls$/i,'.xlsx');
+  if(!doc.patch){const out=XLSX.write(doc.wb,{bookType:'xlsx',type:'array'});return{bytes:out,name}}
+  const zip=doc.zip;
+  for(const sn in doc.edits){
+    const path=doc.map[sn];if(!path||!zip.file(path))continue;
+    const dom=parseXml(await zip.file(path).async('string'));
+    const sd=dom.getElementsByTagNameNS(XNS,'sheetData')[0];if(!sd)continue;
+    const ws=doc.wb.Sheets[sn];
+    const rowIdx={};for(const r of kids(sd,'row'))rowIdx[r.getAttribute('r')]=r;
+    for(const a in doc.edits[sn]){
+      const e=doc.edits[sn][a];const {r,c}=XLSX.utils.decode_cell(a);const rn=String(r+1);
+      let row=rowIdx[rn];
+      if(!row){if(e.k==='e')continue;row=dom.createElementNS(XNS,'row');row.setAttribute('r',rn);
+        let after=null;for(const x of kids(sd,'row'))if(+x.getAttribute('r')>r+1){after=x;break}
+        sd.insertBefore(row,after);rowIdx[rn]=row}
+      let ce=null,next=null;
+      for(const x of kids(row,'c')){const xc=XLSX.utils.decode_cell(x.getAttribute('r')).c;if(xc===c){ce=x;break}if(xc>c){next=x;break}}
+      if(!ce){if(e.k==='e')continue;ce=dom.createElementNS(XNS,'c');ce.setAttribute('r',a);row.insertBefore(ce,next)}
+      const fe=kid(ce,'f');
+      if(fe&&fe.getAttribute('t')==='shared'&&fe.hasAttribute('ref'))unshare(dom,fe.getAttribute('si'),ws);
+      for(const n of ['f','v','is'])for(const x of kids(ce,n))ce.removeChild(x);
+      ce.removeAttribute('t');
+      const add=(n,t)=>{const x=dom.createElementNS(XNS,n);x.textContent=t;ce.appendChild(x);return x};
+      if(e.k==='s'){ce.setAttribute('t','inlineStr');const is=dom.createElementNS(XNS,'is');const t=dom.createElementNS(XNS,'t');t.setAttributeNS('http://www.w3.org/XML/1998/namespace','xml:space','preserve');t.textContent=e.v;is.appendChild(t);ce.appendChild(is)}
+      else if(e.k==='n')add('v',String(e.v));
+      else if(e.k==='b'){ce.setAttribute('t','b');add('v',e.v?'1':'0')}
+      else if(e.k==='f'){add('f',e.v);const cv=ws[a];if(cv&&cv.t==='n'&&typeof cv.v==='number'&&isFinite(cv.v))add('v',String(cv.v));else if(cv&&cv.t==='s'){ce.setAttribute('t','str');add('v',cv.v)}}
+      else if(e.k==='e'&&!ce.hasAttribute('s'))row.removeChild(ce);
+    }
+    const dim=dom.getElementsByTagNameNS(XNS,'dimension')[0];if(dim&&ws['!ref'])dim.setAttribute('ref',ws['!ref']);
+    zip.file(path,serXml(dom));
+  }
+  // 열 때 다시 계산하도록 표시하고 계산 순서 파일 제거
+  const wbx=parseXml(await zip.file('xl/workbook.xml').async('string'));
+  let calc=wbx.getElementsByTagNameNS(XNS,'calcPr')[0];
+  if(!calc){calc=wbx.createElementNS(XNS,'calcPr');const order=['oleSize','customWorkbookViews','pivotCaches','smartTagPr','smartTagTypes','webPublishing','fileRecoveryPr','webPublishObjects','extLst'];let before=null;for(const x of wbx.documentElement.children)if(order.includes(x.localName)){before=x;break}wbx.documentElement.insertBefore(calc,before)}
+  calc.setAttribute('fullCalcOnLoad','1');
+  zip.file('xl/workbook.xml',serXml(wbx));
+  if(zip.file('xl/calcChain.xml')){
+    zip.remove('xl/calcChain.xml');
+    const rels=parseXml(await zip.file('xl/_rels/workbook.xml.rels').async('string'));
+    for(const r of [...rels.getElementsByTagNameNS(RELNS,'Relationship')])if(/calcChain$/.test(r.getAttribute('Type')))r.parentNode.removeChild(r);
+    zip.file('xl/_rels/workbook.xml.rels',serXml(rels));
+    const ct=parseXml(await zip.file('[Content_Types].xml').async('string'));
+    for(const o of [...ct.getElementsByTagNameNS(CTNS,'Override')])if(o.getAttribute('PartName')==='/xl/calcChain.xml')o.parentNode.removeChild(o);
+    zip.file('[Content_Types].xml',serXml(ct));
+  }
+  doc.edits={};
+  return{bytes:await zip.generateAsync({type:'arraybuffer',compression:'DEFLATE'}),name};
+}
+function unshare(dom,si,ws){
+  for(const f of [...dom.getElementsByTagNameNS(XNS,'f')]){
+    if(f.getAttribute('t')!=='shared'||f.getAttribute('si')!==si)continue;
+    const a=f.parentNode.getAttribute('r');const c=ws[a];
+    f.removeAttribute('t');f.removeAttribute('si');f.removeAttribute('ref');
+    if(c&&c.f)f.textContent=c.f;
+  }
+}
+
+$('#newSheet').onclick=()=>{
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[]]),'Sheet1');
+  const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  openRecord({id:'n'+Date.now(),name:'새 통합 문서.xlsx',kind:'sheet',buf,updated:Date.now()});
+};
+$('#sampleX').onclick=()=>{
+  const aoa=[['월','매출(원)','비용(원)','이익(원)','이익률'],['1월',4200000,2900000,null,null],['2월',3850000,2700000,null,null],['3월',5120000,3300000,null,null],['4월',4760000,3150000,null,null],['합계',null,null,null,null]];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  for(let r=2;r<=5;r++){ws['D'+r]={t:'n',f:`B${r}-C${r}`,z:'#,##0'};ws['E'+r]={t:'n',f:`ROUND(D${r}/B${r},3)`,z:'0.0%'};ws['B'+r].z='#,##0';ws['C'+r].z='#,##0'}
+  ['B','C','D'].forEach(c=>ws[c+'6']={t:'n',f:`SUM(${c}2:${c}5)`,z:'#,##0'});ws.E6={t:'n',f:'ROUND(D6/B6,3)',z:'0.0%'};
+  ws['!cols']=[{wch:8},{wch:13},{wch:13},{wch:13},{wch:9}];
+  recalc(ws);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'매출');
+  openRecord({id:'s'+Date.now(),name:'예시_월별매출.xlsx',kind:'sheet',buf:XLSX.write(wb,{bookType:'xlsx',type:'array'}),updated:Date.now()});
+};
+
+/* ================================================================
+   파워포인트
+   ================================================================ */
+const PNS='http://schemas.openxmlformats.org/presentationml/2006/main';
+const ANS='http://schemas.openxmlformats.org/drawingml/2006/main';
+const RNS='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+const EMU_PT=12700;
+
+function resolvePath(base,target){if(target.startsWith('/'))return target.slice(1);const parts=base.split('/');parts.pop();for(const s of target.split('/')){if(s==='..')parts.pop();else if(s!=='.')parts.push(s)}return parts.join('/')}
+const relsPathOf=p=>{const i=p.lastIndexOf('/');return p.slice(0,i)+'/_rels/'+p.slice(i+1)+'.rels'};
+async function loadPart(path){
+  if(doc.parts[path])return doc.parts[path];
+  const f=doc.zip.file(path);if(!f)return null;
+  const part={path,dom:parseXml(await f.async('string')),rels:{}};
+  const rp=relsPathOf(path),rf=doc.zip.file(rp);
+  if(rf){part.relsDom=parseXml(await rf.async('string'));for(const r of part.relsDom.getElementsByTagNameNS(RELNS,'Relationship')){const t=r.getAttribute('Target');part.rels[r.getAttribute('Id')]={type:r.getAttribute('Type')||'',target:r.getAttribute('TargetMode')==='External'?null:resolvePath(path,t)}}}
+  doc.parts[path]=part;return part;
+}
+const relOfType=(part,suffix)=>{for(const id in part.rels)if(part.rels[id].type.endsWith(suffix))return part.rels[id].target;return null};
+
+async function openDeckDoc(rec){
+  const zip=await JSZip.loadAsync(rec.buf);
+  doc={kind:'deck',rec,zip,parts:{},media:{},slides:[],cur:0,sel:null,dirty:false};
+  const pres=await loadPart('ppt/presentation.xml');
+  const sz=pres.dom.getElementsByTagNameNS(PNS,'sldSz')[0];
+  doc.cx=+(sz&&sz.getAttribute('cx'))||12192000;doc.cy=+(sz&&sz.getAttribute('cy'))||6858000;
+  doc.defStyle=pres.dom.getElementsByTagNameNS(PNS,'defaultTextStyle')[0]||null;
+  doc.ct=parseXml(await zip.file('[Content_Types].xml').async('string'));
+  for(const sid of pres.dom.getElementsByTagNameNS(PNS,'sldId')){
+    const rid=sid.getAttributeNS(RNS,'id');const t=pres.rels[rid]&&pres.rels[rid].target;if(!t)continue;
+    const s=await loadSlide(t);if(s){s.sldId=sid;doc.slides.push(s)}
+  }
+  // 이미지 미리 읽기
+  const jobs=[];
+  for(const p of Object.values(doc.parts))for(const id in p.rels){const r=p.rels[id];if(r.target&&/\/image$/.test(r.type)&&!doc.media[r.target])jobs.push(loadMedia(r.target))}
+  await Promise.all(jobs);
+  show('deckView');setTitle();renderDeckTools();renderAllSlides();
+}
+async function loadSlide(path){
+  const s=await loadPart(path);if(!s)return null;
+  const lp=relOfType(s,'/slideLayout');const layout=lp?await loadPart(lp):null;
+  const mp=layout?relOfType(layout,'/slideMaster'):null;const master=mp?await loadPart(mp):null;
+  let theme=null;if(master){const tp=relOfType(master,'/theme');if(tp)theme=await loadPart(tp)}
+  if(master&&!master.colors)master.colors=readTheme(theme,master);
+  return{part:s,layout,master};
+}
+async function loadMedia(path){
+  if(doc.media[path]!==undefined)return;doc.media[path]=null;
+  const ext=extOf(path);const mime={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',svg:'image/svg+xml',webp:'image/webp',bmp:'image/bmp'}[ext];
+  const f=doc.zip.file(path);if(!mime||!f)return;
+  const b=await f.async('arraybuffer');doc.media[path]=URL.createObjectURL(new Blob([b],{type:mime}));
+}
+function readTheme(theme,master){
+  const col={dk1:'000000',lt1:'FFFFFF',dk2:'44546A',lt2:'E7E6E6',accent1:'4472C4',accent2:'ED7D31',accent3:'A5A5A5',accent4:'FFC000',accent5:'5B9BD5',accent6:'70AD47',hlink:'0563C1',folHlink:'954F72'};
+  if(theme){const cs=theme.dom.getElementsByTagNameNS(ANS,'clrScheme')[0];if(cs)for(const c of cs.children){const s=c.firstElementChild;if(!s)continue;col[c.localName]=s.localName==='sysClr'?(s.getAttribute('lastClr')||(s.getAttribute('val')==='window'?'FFFFFF':'000000')):(s.getAttribute('val')||col[c.localName])}
+    const fs=theme.dom.getElementsByTagNameNS(ANS,'fontScheme')[0];if(fs){const mj=kid(kid(fs,'majorFont'),'ea'),mn=kid(kid(fs,'minorFont'),'ea'),mjl=kid(kid(fs,'majorFont'),'latin'),mnl=kid(kid(fs,'minorFont'),'latin');col._fonts={mj:[mjl&&mjl.getAttribute('typeface'),mj&&mj.getAttribute('typeface')],mn:[mnl&&mnl.getAttribute('typeface'),mn&&mn.getAttribute('typeface')]}}}
+  const map={bg1:'lt1',tx1:'dk1',bg2:'lt2',tx2:'dk2'};
+  const cm=master&&master.dom.getElementsByTagNameNS(PNS,'clrMap')[0];
+  if(cm)for(const k of Object.keys(map)){const v=cm.getAttribute(k);if(v)map[k]=v}
+  col._map=map;return col;
+}
+
+/* 색 계산 */
+function hex2rgb(h){h=(h||'000000').replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function rgb2hsl([r,g,b]){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s=0;const l=(mx+mn)/2;if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h/=6}return[h,s,l]}
+function hsl2rgb([h,s,l]){if(!s)return[l*255,l*255,l*255];const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;const f=t=>{if(t<0)t+=1;if(t>1)t-=1;return t<1/6?p+(q-p)*6*t:t<1/2?q:t<2/3?p+(q-p)*(2/3-t)*6:p};return[f(h+1/3)*255,f(h)*255,f(h-1/3)*255]}
+const PRST={black:'000000',white:'FFFFFF',red:'FF0000',green:'008000',blue:'0000FF',yellow:'FFFF00',gray:'808080',grey:'808080',orange:'FFA500'};
+function colorFrom(container,ctx){
+  if(!container)return null;
+  let c=null;for(const x of container.children)if(['srgbClr','schemeClr','sysClr','prstClr','scrgbClr'].includes(x.localName)){c=x;break}
+  if(!c)return null;
+  const T=ctx.colors||{};let hex;
+  if(c.localName==='srgbClr')hex=c.getAttribute('val');
+  else if(c.localName==='sysClr')hex=c.getAttribute('lastClr')||(c.getAttribute('val')==='window'?'FFFFFF':'000000');
+  else if(c.localName==='prstClr')hex=PRST[c.getAttribute('val')]||'000000';
+  else if(c.localName==='scrgbClr')hex=[c.getAttribute('r'),c.getAttribute('g'),c.getAttribute('b')].map(v=>Math.round(Math.min(1,(+v||0)/100000)*255).toString(16).padStart(2,'0')).join('');
+  else{let v=c.getAttribute('val');if(v==='phClr'){if(ctx.phClr)return ctx.phClr;v='tx1'}const m=T._map||{};hex=T[m[v]||v]||T[v]||'000000'}
+  let rgb=hex2rgb(hex),a=1;
+  for(const m of c.children){const v=+m.getAttribute('val')/100000;
+    if(m.localName==='alpha')a=v;
+    else if(m.localName==='lumMod'||m.localName==='lumOff'){const hs=rgb2hsl(rgb);if(m.localName==='lumMod')hs[2]*=v;else hs[2]+=v;hs[2]=Math.max(0,Math.min(1,hs[2]));rgb=hsl2rgb(hs)}
+    else if(m.localName==='tint')rgb=rgb.map(x=>x*v+255*(1-v));
+    else if(m.localName==='shade')rgb=rgb.map(x=>x*v);
+  }
+  rgb=rgb.map(x=>Math.round(Math.max(0,Math.min(255,x))));
+  return a<1?`rgba(${rgb.join(',')},${a})`:`rgb(${rgb.join(',')})`;
+}
+function fillOf(spPr,styleEl,ctx){
+  if(spPr)for(const x of spPr.children){
+    if(x.localName==='noFill')return'transparent';
+    if(x.localName==='solidFill')return colorFrom(x,ctx);
+    if(x.localName==='gradFill'){const st=[...x.getElementsByTagNameNS(ANS,'gs')].map(g=>({p:+g.getAttribute('pos')/1000,c:colorFrom(g,ctx)})).sort((a,b)=>a.p-b.p);const lin=kid(x,'lin');const ang=lin?(+lin.getAttribute('ang')/60000+90):180;return st.length?`linear-gradient(${ang}deg,${st.map(s=>`${s.c} ${s.p}%`).join(',')})`:null}
+    if(x.localName==='blipFill'){const b=kid(x,'blip');const id=b&&b.getAttributeNS(RNS,'embed');const t=id&&ctx.rels[id]&&ctx.rels[id].target;const u=t&&doc.media[t];return u?`center/100% 100% no-repeat url("${u}")`:null}
+    if(x.localName==='pattFill')return colorFrom(kid(x,'fgClr'),ctx);
+  }
+  if(styleEl){const fr=kid(styleEl,'fillRef');if(fr&&+fr.getAttribute('idx')>0)return colorFrom(fr,ctx)}
+  return null;
+}
+function lineOf(spPr,styleEl,ctx){
+  const ln=spPr&&kid(spPr,'ln');
+  if(ln){if(kid(ln,'noFill'))return null;const w=Math.max(1,(+ln.getAttribute('w')||12700)*ctx.scale);const c=colorFrom(kid(ln,'solidFill'),ctx);if(c)return{w,c};}
+  if(styleEl){const lr=kid(styleEl,'lnRef');if(lr&&+lr.getAttribute('idx')>0&&!(ln&&kid(ln,'noFill'))){const c=colorFrom(lr,ctx);if(c)return{w:Math.max(1,(ln&&+ln.getAttribute('w')||12700)*ctx.scale),c}}}
+  return null;
+}
+
+/* 자리표시자(placeholder) 상속 */
+function phOf(e){const nv=e.firstElementChild;const nvPr=nv&&kid(nv,'nvPr');return nvPr?kid(nvPr,'ph'):null}
+function findPh(part,ph,byTypeOnly){
+  if(!part)return null;
+  const type=ph.getAttribute('type')||'body',idx=ph.getAttribute('idx');
+  const mt=t=>({ctrTitle:'title',subTitle:'body',obj:'body'}[t]||t);
+  let byType=null;
+  for(const e of part.dom.getElementsByTagNameNS(PNS,'sp')){const p=phOf(e);if(!p)continue;const pt=p.getAttribute('type')||'body',pi=p.getAttribute('idx');
+    if(!byTypeOnly&&idx!=null&&pi===idx)return e;
+    if(!byType&&(pt===type||(byTypeOnly&&mt(pt)===mt(type))))byType=e}
+  return byType;
+}
+function phChain(e,s){const ph=phOf(e);if(!ph)return{ph:null,lay:null,mas:null};const lay=findPh(s.layout,ph,false);const mas=findPh(s.master,lay?phOf(lay):ph,true)||findPh(s.master,ph,true);return{ph,lay,mas}}
+function xfrmOf(e){
+  const spPr=kid(e,'spPr')||kid(e,'grpSpPr');let x=spPr&&kid(spPr,'xfrm');
+  if(!x&&e.localName==='graphicFrame')x=kid(e,'xfrm');
+  if(!x)return null;const o=kid(x,'off'),z=kid(x,'ext');if(!o||!z)return null;
+  return{x:+o.getAttribute('x'),y:+o.getAttribute('y'),cx:+z.getAttribute('cx'),cy:+z.getAttribute('cy'),rot:+(x.getAttribute('rot')||0),flipH:x.getAttribute('flipH')==='1',flipV:x.getAttribute('flipV')==='1',el:x};
+}
+function resolvedXfrm(e,s){let x=xfrmOf(e);if(x)return x;const c=phChain(e,s);return(c.lay&&xfrmOf(c.lay))||(c.mas&&xfrmOf(c.mas))||null}
+
+/* 슬라이드 그리기 */
+function slideScale(){const w=$('#slides').clientWidth-24;return Math.min(w,980)/doc.cx}
+function renderAllSlides(){
+  const box=$('#slides');box.innerHTML='';const sc=slideScale();
+  doc.slides.forEach((s,i)=>{const w=el('div','sw'+(i===doc.cur?' cur':''));w.dataset.i=i;w.innerHTML=`<div class="lbl"><span>${i+1} / ${doc.slides.length}</span></div>`;w.appendChild(drawSlide(s,sc,true));box.appendChild(w)});
+  observeCur();
+}
+function rerenderSlide(i){const w=$(`#slides .sw[data-i="${i}"]`);if(!w)return renderAllSlides();const old=w.querySelector('.slide');w.replaceChild(drawSlide(doc.slides[i],slideScale(),true),old);if(doc.sel&&doc.sel.i===i)doc.sel=null;updateDeckTools()}
+function bgOf(part,ctx){const cs=part&&kid(part.dom.documentElement,'cSld');const bg=cs&&kid(cs,'bg');if(!bg)return null;const pr=kid(bg,'bgPr');if(pr)return fillOf(pr,null,ctx);const ref=kid(bg,'bgRef');if(ref)return colorFrom(ref,ctx);return null}
+function drawSlide(s,scale,editable){
+  const W=doc.cx*scale,H=doc.cy*scale;
+  const box=el('div','slide');box.style.width=W+'px';box.style.height=H+'px';
+  const colors=(s.master&&s.master.colors)||readTheme(null,null);
+  const base={s,scale,colors,rels:s.part.rels};
+  box.style.background=bgOf(s.part,{...base,rels:s.part.rels})||bgOf(s.layout,{...base,rels:s.layout&&s.layout.rels})||bgOf(s.master,{...base,rels:s.master&&s.master.rels})||'#fff';
+  const showM=p=>!p||p.dom.documentElement.getAttribute('showMasterSp')!=='0';
+  if(s.master&&showM(s.part)&&showM(s.layout))drawTree(s.master,{...base,rels:s.master.rels,deco:true},box,null);
+  if(s.layout&&showM(s.part))drawTree(s.layout,{...base,rels:s.layout.rels,deco:true},box,null);
+  s.shapes=[];
+  drawTree(s.part,{...base,rels:s.part.rels,deco:false,editable},box,null);
+  return box;
+}
+function drawTree(part,ctx,box,tf,tree){
+  tree=tree||part.dom.getElementsByTagNameNS(PNS,'spTree')[0];if(!tree)return;
+  for(const e of tree.children){
+    const n=e.localName;
+    if(!['sp','pic','grpSp','graphicFrame','cxnSp'].includes(n))continue;
+    if(ctx.deco&&phOf(e))continue;
+    if(n==='grpSp'){const x=xfrmOf(e);const g=kid(kid(e,'grpSpPr'),'xfrm');let sub=tf;
+      if(x&&g){const co=kid(g,'chOff'),ce=kid(g,'chExt');const cx0=+(co&&co.getAttribute('x'))||0,cy0=+(co&&co.getAttribute('y'))||0,cw=+(ce&&ce.getAttribute('cx'))||x.cx||1,chh=+(ce&&ce.getAttribute('cy'))||x.cy||1;const sx=x.cx/cw||1,sy=x.cy/chh||1;const parent=tf;
+        sub=r=>{const q={...r,x:x.x+(r.x-cx0)*sx,y:x.y+(r.y-cy0)*sy,cx:r.cx*sx,cy:r.cy*sy};return parent?parent(q):q}}
+      drawTree(part,{...ctx,editable:false},box,sub,e);
+      continue}
+    let x=ctx.deco?xfrmOf(e):resolvedXfrm(e,ctx.s);if(!x)continue;
+    if(tf)x={...x,...tf(x)};
+    const d=el('div','shp');const S=ctx.scale;
+    Object.assign(d.style,{left:x.x*S+'px',top:x.y*S+'px',width:x.cx*S+'px',height:x.cy*S+'px'});
+    const tr=[];if(x.rot)tr.push(`rotate(${x.rot/60000}deg)`);if(x.flipH)tr.push('scaleX(-1)');if(x.flipV)tr.push('scaleY(-1)');
+    if(tr.length)d.style.transform=tr.join(' ');
+    if(n==='pic')drawPic(e,d,ctx);
+    else if(n==='graphicFrame')drawFrame(e,d,ctx,x);
+    else if(n==='cxnSp')drawLine(e,d,ctx,x);
+    else drawSp(e,d,ctx,x);
+    if(!ctx.deco&&!tf&&ctx.editable){d.classList.add('ed');d.dataset.k=ctx.s.shapes.push(e)-1}
+    box.appendChild(d);
+  }
+}
+function drawPic(e,d,ctx){
+  const bf=kid(e,'blipFill');const b=bf&&kid(bf,'blip');const id=b&&b.getAttributeNS(RNS,'embed');const t=id&&ctx.rels[id]&&ctx.rels[id].target;const u=t&&doc.media[t];
+  if(u){const im=document.createElement('img');im.src=u;im.alt='';d.appendChild(im)}else{d.style.background='repeating-linear-gradient(45deg,#eee 0 8px,#f6f6f6 8px 16px)';}
+  const sp=kid(e,'spPr');const g=sp&&kid(sp,'prstGeom');if(g&&g.getAttribute('prst')==='ellipse'){d.style.borderRadius='50%';d.style.overflow='hidden'}
+}
+function drawLine(e,d,ctx,x){
+  const ln=lineOf(kid(e,'spPr'),kid(e,'style'),ctx)||{w:1,c:'#000'};
+  const W=Math.max(x.cx*ctx.scale,1),H=Math.max(x.cy*ctx.scale,1);
+  d.innerHTML=`<svg width="${W}" height="${H}" style="overflow:visible;position:absolute;inset:0"><line x1="0" y1="0" x2="${x.cx*ctx.scale}" y2="${x.cy*ctx.scale}" stroke="${ln.c}" stroke-width="${ln.w}"/></svg>`;
+}
+function drawSp(e,d,ctx,x){
+  const spPr=kid(e,'spPr'),st=kid(e,'style');
+  const c=ctx.deco?{ph:null}:phChain(e,ctx.s);
+  let fill=fillOf(spPr,st,ctx);
+  if(fill==null&&c.lay)fill=fillOf(kid(c.lay,'spPr'),null,{...ctx,rels:ctx.s.layout.rels});
+  if(fill&&fill!=='transparent')d.style.background=fill;
+  const ln=lineOf(spPr,st,ctx);if(ln)d.style.border=`${ln.w}px solid ${ln.c}`;
+  const g=spPr&&kid(spPr,'prstGeom');const pr=g&&g.getAttribute('prst');
+  if(pr==='ellipse')d.style.borderRadius='50%';else if(pr==='roundRect'||pr==='flowChartAlternateProcess')d.style.borderRadius=Math.min(x.cx,x.cy)*ctx.scale*.16+'px';
+  else if(pr==='triangle')d.style.clipPath='polygon(50% 0,100% 100%,0 100%)';
+  else if(pr==='rightArrow')d.style.clipPath='polygon(0 25%,60% 25%,60% 0,100% 50%,60% 100%,60% 75%,0 75%)';
+  else if(pr==='chevron')d.style.clipPath='polygon(0 0,75% 0,100% 50%,75% 100%,0 100%,25% 50%)';
+  else if(pr==='diamond')d.style.clipPath='polygon(50% 0,100% 50%,50% 100%,0 50%)';
+  const tb=kid(e,'txBody');
+  if(tb){
+    const fontRef=st&&kid(st,'fontRef');const fc=fontRef?colorFrom(fontRef,ctx):null;
+    d.appendChild(drawText(tb,ctx,c,fc,!!pr&&pr!=='rect'&&!c.ph));
+  }
+}
+function drawFrame(e,d,ctx,x){
+  const tbl=e.getElementsByTagNameNS(ANS,'tbl')[0];
+  if(!tbl){d.style.background='rgba(120,120,120,.08)';d.style.border='1px dashed rgba(0,0,0,.25)';d.innerHTML='<div style="display:grid;place-items:center;height:100%;font-size:12px;color:#777">차트·개체 (원본 유지)</div>';return}
+  const S=ctx.scale;const cols=[...tbl.getElementsByTagNameNS(ANS,'gridCol')].map(g=>+g.getAttribute('w')*S);
+  const t=document.createElement('table');const cg=document.createElement('colgroup');for(const w of cols){const c=document.createElement('col');c.style.width=w+'px';cg.appendChild(c)}t.appendChild(cg);
+  const tp=kid(tbl,'tblPr');const first=tp&&tp.getAttribute('firstRow')==='1';
+  kids(tbl,'tr').forEach((tr,ri)=>{const r=document.createElement('tr');r.style.height=(+tr.getAttribute('h')*S)+'px';
+    for(const tc of kids(tr,'tc')){if(tc.getAttribute('hMerge')==='1'||tc.getAttribute('vMerge')==='1')continue;const td=document.createElement('td');
+      const gs=tc.getAttribute('gridSpan'),rs=tc.getAttribute('rowSpan');if(gs)td.colSpan=+gs;if(rs)td.rowSpan=+rs;
+      const pr=kid(tc,'tcPr');const f=pr&&fillOf(pr,null,ctx);if(f&&f!=='transparent')td.style.background=f;else if(first&&ri===0)td.style.background=colorFrom(parseXml(`<a:x xmlns:a="${ANS}"><a:schemeClr val="accent1"/></a:x>`).documentElement,ctx);
+      const tb=kid(tc,'txBody');td.style.position='relative';
+      if(tb){const tx=drawText(tb,ctx,{ph:null},first&&ri===0&&!(f&&f!=='transparent')?'#fff':null,false,true);tx.style.position='relative';td.appendChild(tx)}
+      td.dataset.tc='1';td._tc=tc;r.appendChild(td)}
+    t.appendChild(r)});
+  d.appendChild(t);
+}
+function lvlEls(chainLists,lvl){const n=`lvl${lvl+1}pPr`;const out=[];for(const ls of chainLists)if(ls){const x=kid(ls,n);if(x)out.push(x)}return out}
+function textChain(tb,ctx,c){
+  // 위계: 도형 lstStyle → 레이아웃 자리표시자 → 마스터 자리표시자 → 마스터 기본 문단 스타일 → 프레젠테이션 기본값
+  const L=[kid(tb,'lstStyle')];
+  const tbOf=e=>e&&kid(e,'txBody');
+  if(c.ph){L.push(kid(tbOf(c.lay),'lstStyle'),kid(tbOf(c.mas),'lstStyle'));
+    const ts=ctx.s.master&&ctx.s.master.dom.getElementsByTagNameNS(PNS,'txStyles')[0];const t=c.ph.getAttribute('type')||'body';
+    if(ts)L.push(kid(ts,(t==='title'||t==='ctrTitle')?'titleStyle':(['dt','ftr','sldNum'].includes(t)?'otherStyle':'bodyStyle')))}
+  else if(ctx.deco){const ts=ctx.s.master&&ctx.s.master.dom.getElementsByTagNameNS(PNS,'txStyles')[0];if(ts)L.push(kid(ts,'otherStyle'))}
+  L.push(doc.defStyle);
+  return L;
+}
+function bodyPrList(tb,c){const o=[kid(tb,'bodyPr')];const b=e=>e&&kid(kid(e,'txBody'),'bodyPr');if(c.ph)o.push(b(c.lay),b(c.mas));return o.filter(Boolean)}
+function drawText(tb,ctx,c,fallbackColor,centerDefault,inTable){
+  const S=ctx.scale;const bps=bodyPrList(tb,c);
+  const ba=(n,def)=>{for(const b of bps)if(b.hasAttribute(n))return b.getAttribute(n);return def};
+  const tx=el('div','tx');
+  const ins=(n,d)=>(+ba(n,d))*S;
+  tx.style.padding=`${ins('tIns',45720)}px ${ins('rIns',91440)}px ${ins('bIns',45720)}px ${ins('lIns',91440)}px`;
+  const anc=ba('anchor',centerDefault?'ctr':'t');tx.style.justifyContent=anc==='ctr'?'center':anc==='b'?'flex-end':'flex-start';
+  if(ba('wrap','square')==='none')tx.style.whiteSpace='nowrap';
+  let fs=1;for(const b of bps){const na=kid(b,'normAutofit');if(na){if(na.getAttribute('fontScale'))fs=+na.getAttribute('fontScale')/100000;break}}
+  if(inTable)tx.style.position='relative';
+  const L=textChain(tb,ctx,c);
+  const fonts=ctx.colors&&ctx.colors._fonts;
+  let autoN={};
+  for(const p of kids(tb,'p')){
+    const pPr=kid(p,'pPr');const lvl=+(pPr&&pPr.getAttribute('lvl')||0);const LE=lvlEls(L,lvl);
+    const pa=(n,d)=>{if(pPr&&pPr.hasAttribute(n))return pPr.getAttribute(n);for(const x of LE)if(x.hasAttribute(n))return x.getAttribute(n);return d};
+    const pk=n=>{if(pPr&&kid(pPr,n))return kid(pPr,n);for(const x of LE){const y=kid(x,n);if(y)return y}return null};
+    const def=n=>{for(const x of [pPr,...LE]){const r=x&&kid(x,'defRPr');if(r&&r.hasAttribute(n))return r.getAttribute(n)}return null};
+    const defFill=()=>{for(const x of [pPr,...LE]){const r=x&&kid(x,'defRPr');const f=r&&kid(r,'solidFill');if(f)return f}return null};
+    const P=el('div','pa');
+    const al=pa('algn','l');P.style.textAlign={ctr:'center',r:'right',just:'justify',dist:'justify'}[al]||'left';
+    const marL=+pa('marL',0)*S,ind=+pa('indent',0)*S;
+    P.style.paddingLeft=marL+'px';P.style.textIndent=ind+'px';
+    const ls=pk('lnSpc');const lp=ls&&kid(ls,'spcPct');const lpt=ls&&kid(ls,'spcPts');
+    let lh=1.2;if(lp)lh=1.2*(+lp.getAttribute('val')/100000);
+    const sb=pk('spcBef'),sbp=sb&&kid(sb,'spcPts');if(sbp)P.style.marginTop=(+sbp.getAttribute('val')/100*EMU_PT*S*fs)+'px';
+    const sa=pk('spcAft'),sap=sa&&kid(sa,'spcPts');if(sap)P.style.marginBottom=(+sap.getAttribute('val')/100*EMU_PT*S*fs)+'px';
+    const runs=[...p.children].filter(x=>['r','br','fld'].includes(x.localName));
+    let firstSz=null,firstColor=null;
+    const mk=(rPr,text)=>{
+      const g=n=>rPr&&rPr.hasAttribute(n)?rPr.getAttribute(n):def(n);
+      const sz=+(g('sz')||1800)*fs;if(firstSz==null)firstSz=sz;
+      const sp=document.createElement('span');sp.textContent=text;
+      sp.style.fontSize=(sz/100*EMU_PT*S)+'px';
+      const b=g('b');if(b==='1'||b==='true')sp.style.fontWeight='700';
+      const it=g('i');if(it==='1'||it==='true')sp.style.fontStyle='italic';
+      const u=g('u');if(u&&u!=='none')sp.style.textDecoration='underline';
+      const stk=g('strike');if(stk&&stk!=='noStrike')sp.style.textDecoration=(sp.style.textDecoration?sp.style.textDecoration+' ':'')+'line-through';
+      const bl=+g('baseline')||0;if(bl){sp.style.verticalAlign=bl>0?'super':'sub';sp.style.fontSize=(sz/100*EMU_PT*S*.7)+'px'}
+      const fe=(rPr&&kid(rPr,'solidFill'))||defFill();
+      const col=(fe&&colorFrom(fe,ctx))||fallbackColor||colorFrom(parseXml(`<a:x xmlns:a="${ANS}"><a:schemeClr val="tx1"/></a:x>`).documentElement,ctx);
+      sp.style.color=col;if(firstColor==null)firstColor=col;
+      const ff=[];const lat=rPr&&kid(rPr,'latin'),ea=rPr&&kid(rPr,'ea');
+      const tf=v=>{if(!v)return null;if(v[0]==='+'&&fonts){const set=v.startsWith('+mj')?fonts.mj:fonts.mn;return v.endsWith('-ea')?set[1]:set[0]}return v};
+      for(const f of [tf(ea&&ea.getAttribute('typeface')),tf(lat&&lat.getAttribute('typeface'))])if(f)ff.push(`"${f}"`);
+      if(ff.length)sp.style.fontFamily=ff.join(',')+',"Noto Sans KR",sans-serif';
+      return sp;
+    };
+    const frag=document.createDocumentFragment();
+    for(const r of runs){
+      if(r.localName==='br'){frag.appendChild(document.createElement('br'));continue}
+      const t=[...r.children].filter(x=>x.localName==='t').map(x=>x.textContent).join('');
+      frag.appendChild(mk(kid(r,'rPr'),t));
+    }
+    const empty=!runs.some(r=>r.localName!=='br'&&r.textContent);
+    if(empty){const s=mk(kid(p,'endParaRPr'),'\u00a0');frag.appendChild(s)}
+    // 글머리표
+    let bu=null;for(const x of [pPr,...LE]){if(!x)continue;const n=kid(x,'buNone')||kid(x,'buChar')||kid(x,'buAutoNum');if(n){bu=n;break}}
+    if(bu&&!empty&&bu.localName!=='buNone'){
+      let ch;if(bu.localName==='buChar')ch=bu.getAttribute('char')||'•';else{const k=lvl;autoN[k]=(autoN[k]||0)+1;const sch=bu.getAttribute('type')||'arabicPeriod';ch=autoN[k]+(sch.includes('Paren')?')':'.')}
+      const b=document.createElement('span');b.textContent=ch;b.style.fontSize=((firstSz||1800)/100*EMU_PT*S)+'px';b.style.color=firstColor||'';b.style.display='inline-block';b.style.minWidth=Math.max(-ind,0)+'px';b.style.textIndent='0';
+      if(!ind)b.style.marginRight='.4em';
+      P.appendChild(b);
+    }else if(!bu||bu.localName==='buNone'){autoN={}}
+    P.appendChild(frag);
+    P.style.lineHeight=lpt?((+lpt.getAttribute('val')/100*EMU_PT*S)+'px'):String(lh);
+    tx.appendChild(P);
+  }
+  return tx;
+}
+
+/* 현재 슬라이드 추적 */
+let io;
+function observeCur(){if(io)io.disconnect();io=new IntersectionObserver(es=>{let best=null;for(const e of es)if(e.isIntersecting&&e.intersectionRatio>.55)best=e;if(best)setCur(+best.target.dataset.i)},{root:$('#slides'),threshold:[.55,.8]});for(const w of document.querySelectorAll('#slides .sw'))io.observe(w)}
+function setCur(i){if(i===doc.cur)return;doc.cur=i;for(const w of document.querySelectorAll('#slides .sw'))w.classList.toggle('cur',+w.dataset.i===i);updateDeckTools()}
+
+/* 선택 · 이동 · 편집 */
+const slidesBox=$('#slides');
+let drag=null;
+slidesBox.addEventListener('pointerdown',e=>{
+  if(!doc||doc.kind!=='deck')return;
+  const sw=e.target.closest('.sw');if(sw)setCur(+sw.dataset.i);
+  const d=e.target.closest('.shp.ed');
+  if(!d){if(doc.sel){clearSel();updateDeckTools()}return}
+  const i=+sw.dataset.i,k=+d.dataset.k;
+  if(!(doc.sel&&doc.sel.i===i&&doc.sel.k===k)){selectShape(i,k,d);drag={first:true};return}
+  e.preventDefault();d.setPointerCapture(e.pointerId);
+  drag={d,i,k,sx:e.clientX,sy:e.clientY,l:parseFloat(d.style.left),t:parseFloat(d.style.top),moved:false};
+});
+slidesBox.addEventListener('pointermove',e=>{if(!drag||drag.first)return;const dx=e.clientX-drag.sx,dy=e.clientY-drag.sy;if(!drag.moved&&Math.hypot(dx,dy)<5)return;drag.moved=true;drag.d.style.left=drag.l+dx+'px';drag.d.style.top=drag.t+dy+'px'});
+slidesBox.addEventListener('pointerup',e=>{
+  if(!drag)return;const g=drag;drag=null;if(g.first)return;
+  if(g.moved){const sc=slideScale();const s=doc.slides[g.i],sh=s.shapes[g.k];const x=resolvedXfrm(sh,s);
+    const nx=Math.round(x.x+(e.clientX-g.sx)/sc),ny=Math.round(x.y+(e.clientY-g.sy)/sc);setOff(sh,s,nx,ny,x);markDirty()}
+  else editSelected(e.target);
+});
+slidesBox.addEventListener('dblclick',e=>{if(doc&&doc.sel&&e.target.closest('.shp.sel'))editSelected(e.target)});
+function clearSel(){for(const x of document.querySelectorAll('#slides .shp.sel'))x.classList.remove('sel');if(doc)doc.sel=null}
+function selectShape(i,k,d){clearSel();d.classList.add('sel');doc.sel={i,k};updateDeckTools()}
+function setOff(sh,s,nx,ny,x){
+  let xf=xfrmOf(sh);
+  if(!xf){const spPr=kid(sh,'spPr');const xe=sh.ownerDocument.createElementNS(ANS,'a:xfrm');const o=sh.ownerDocument.createElementNS(ANS,'a:off'),z=sh.ownerDocument.createElementNS(ANS,'a:ext');z.setAttribute('cx',x.cx);z.setAttribute('cy',x.cy);xe.appendChild(o);xe.appendChild(z);spPr.insertBefore(xe,spPr.firstChild);xf=xfrmOf(sh)}
+  const o=kid(xf.el,'off');o.setAttribute('x',nx);o.setAttribute('y',ny);
+}
+function editSelected(target){
+  if(!doc.sel)return;const s=doc.slides[doc.sel.i],sh=s.shapes[doc.sel.k];
+  let tb=null;const td=target&&target.closest&&target.closest('td[data-tc]');
+  if(td&&td._tc){tb=kid(td._tc,'txBody');if(!tb){toast('이 칸은 고칠 수 없어요');return}}
+  else tb=kid(sh,'txBody');
+  if(!tb){toast(sh.localName==='pic'?'그림은 이동·복제·삭제만 할 수 있어요':'글자가 없는 개체예요. 이동·복제·삭제할 수 있어요');return}
+  editText(tb,s).then(ok=>{if(ok){rerenderSlide(doc.sel?doc.sel.i:doc.cur);markDirty()}});
+}
+function readTb(tb){return kids(tb,'p').map(p=>[...p.children].map(x=>x.localName==='br'?'\n':(x.localName==='r'||x.localName==='fld')?[...x.children].filter(t=>t.localName==='t').map(t=>t.textContent).join(''):'').join('')).join('\n')}
+function editText(tb,s){
+  const firstR=tb.getElementsByTagNameNS(ANS,'rPr')[0];
+  // 현재 크기: 그려진 화면에서 첫 글자 크기 추정
+  const selEl=document.querySelector('#slides .shp.sel span');
+  const curPt=firstR&&firstR.getAttribute('sz')?+firstR.getAttribute('sz')/100:(selEl?Math.round(parseFloat(selEl.style.fontSize)/(EMU_PT*slideScale())):18);
+  const curB=!!(firstR&&(firstR.getAttribute('b')==='1'||firstR.getAttribute('b')==='true'));
+  const COLORS=[null,'000000','FFFFFF','595959','C00000','E36C09','1F7A3F','1F4E9C','7030A0'];
+  return openSheet((b,close)=>{
+    let pt=curPt,bold=curB,color=null,touched={sz:false,b:false};
+    b.innerHTML=`<h3>글자 고치기</h3><textarea id="ta" aria-label="내용">${esc(readTb(tb))}</textarea>
+      <div class="row"><div class="stepper"><button data-s="-2" aria-label="작게">−</button><span id="ptv">${pt}pt</span><button data-s="2" aria-label="크게">+</button></div>
+      <button class="tg${bold?' on':''}" id="bt" aria-pressed="${bold}">B</button></div>
+      <div class="sws" id="sws">${COLORS.map((c,i)=>`<button class="swc${i===0?' keep on':''}" data-c="${c||''}" aria-label="${c?'#'+c:'색 유지'}" style="${c?'background:#'+c:''}"></button>`).join('')}</div>
+      <p>줄을 바꾸면 새 문단이 됩니다. 크기·굵기·색은 이 글상자 전체에 적용돼요.</p>
+      <div class="row end"><button class="btn" data-a="n">취소</button><button class="btn pp" data-a="y">적용</button></div>`;
+    b.onclick=e=>{
+      const st=e.target.closest('[data-s]');if(st){pt=Math.max(6,Math.min(160,pt+ +st.dataset.s));touched.sz=true;$('#ptv',b).textContent=pt+'pt';return}
+      if(e.target.id==='bt'){bold=!bold;touched.b=true;e.target.classList.toggle('on',bold);e.target.setAttribute('aria-pressed',bold);return}
+      const sw=e.target.closest('.swc');if(sw){for(const x of b.querySelectorAll('.swc'))x.classList.remove('on');sw.classList.add('on');color=sw.dataset.c||null;return}
+      const a=e.target.dataset.a;if(a==='n')close(false);
+      if(a==='y'){writeTb(tb,$('#ta',b).value,{sz:touched.sz?pt:null,b:touched.b?bold:null,color});close(true)}
+    };
+  });
+}
+function writeTb(tb,text,opt){
+  const D=tb.ownerDocument;const ps=kids(tb,'p');const lines=text.split('\n');
+  const tmpl=ps[ps.length-1];
+  for(let i=0;i<lines.length;i++){
+    let p=ps[i];if(!p){p=(ps[i-1]||tmpl).cloneNode(true);tb.appendChild(p);ps.push(p)}
+    const rs=kids(p,'r').concat(kids(p,'fld'));
+    let rPr=null;for(const r of rs){const x=kid(r,'rPr');if(x){rPr=x.cloneNode(true);break}}
+    if(!rPr){const e=kid(p,'endParaRPr');rPr=D.createElementNS(ANS,'a:rPr');if(e)for(const at of e.attributes)rPr.setAttribute(at.name,at.value);for(const ch of e?e.children:[])rPr.appendChild(ch.cloneNode(true))}
+    for(const x of [...p.children])if(['r','br','fld'].includes(x.localName))p.removeChild(x);
+    if(lines[i]!==''){const r=D.createElementNS(ANS,'a:r');r.appendChild(rPr);const t=D.createElementNS(ANS,'a:t');t.textContent=lines[i];r.appendChild(t);const end=kid(p,'endParaRPr');p.insertBefore(r,end)}
+  }
+  for(let i=lines.length;i<ps.length;i++)tb.removeChild(ps[i]);
+  for(const r of [...tb.getElementsByTagNameNS(ANS,'rPr'),...tb.getElementsByTagNameNS(ANS,'endParaRPr')]){
+    if(opt.sz)r.setAttribute('sz',Math.round(opt.sz*100));
+    if(opt.b!=null)r.setAttribute('b',opt.b?'1':'0');
+    if(opt.color){for(const f of kids(r,'solidFill'))r.removeChild(f);const f=D.createElementNS(ANS,'a:solidFill');const c=D.createElementNS(ANS,'a:srgbClr');c.setAttribute('val',opt.color);f.appendChild(c);const ln=kid(r,'ln');r.insertBefore(f,ln?ln.nextSibling:r.firstChild)}
+  }
+  if(opt.sz){const bp=kid(tb,'bodyPr');const na=bp&&kid(bp,'normAutofit');if(na)na.removeAttribute('fontScale')}
+}
+function maxId(dom){let m=1;for(const c of dom.getElementsByTagNameNS(PNS,'cNvPr'))m=Math.max(m,+c.getAttribute('id')||0);return m}
+
+/* 도구막대 */
+function renderDeckTools(){updateDeckTools()}
+function updateDeckTools(){
+  const t=$('#deckTools');if(!doc||doc.kind!=='deck')return;
+  if(doc.sel){t.innerHTML=`<button class="btn pp" data-t="edit">글자 고치기</button><button class="btn" data-t="dupS">복제</button><button class="btn" data-t="front">맨 앞으로</button><button class="btn" data-t="delS">삭제</button><span class="sp"></span><button class="btn" data-t="desel">선택 해제</button>`}
+  else t.innerHTML=`<button class="btn pp" data-t="addT">+ 글상자</button><button class="btn" data-t="addSl">+ 슬라이드</button><button class="btn" data-t="dupSl">슬라이드 복제</button><button class="btn" data-t="up" aria-label="앞으로 이동">▲</button><button class="btn" data-t="down" aria-label="뒤로 이동">▼</button><button class="btn" data-t="delSl">슬라이드 삭제</button><span class="sp"></span><button class="btn primary" data-t="play">▶ 발표</button>`;
+}
+$('#deckTools').onclick=async e=>{
+  const a=e.target.closest('[data-t]');if(!a||!doc)return;const t=a.dataset.t;
+  const s=doc.slides[doc.cur];
+  if(t==='desel'){clearSel();updateDeckTools()}
+  else if(t==='edit'){const d=$('#slides .shp.sel');editSelected(d)}
+  else if(t==='delS'){const sh=doc.slides[doc.sel.i].shapes[doc.sel.k];sh.parentNode.removeChild(sh);const i=doc.sel.i;doc.sel=null;rerenderSlide(i);markDirty()}
+  else if(t==='dupS'){const S=doc.slides[doc.sel.i],sh=S.shapes[doc.sel.k];const x=resolvedXfrm(sh,S);const c=sh.cloneNode(true);const nv=c.getElementsByTagNameNS(PNS,'cNvPr')[0];if(nv)nv.setAttribute('id',maxId(S.part.dom)+1);const ph=phOf(c);if(ph)ph.parentNode.removeChild(ph);sh.parentNode.insertBefore(c,sh.nextSibling);if(x)setOff(c,S,x.x+Math.round(doc.cx*.02),x.y+Math.round(doc.cy*.03),x);const i=doc.sel.i;rerenderSlide(i);markDirty();toast('복제했어요. 옮기려면 끌어 주세요')}
+  else if(t==='front'){const sh=doc.slides[doc.sel.i].shapes[doc.sel.k];const tree=sh.parentNode;const ext=kid(tree,'extLst');tree.insertBefore(sh,ext);rerenderSlide(doc.sel.i);markDirty()}
+  else if(t==='addT')addTextBox(doc.cur);
+  else if(t==='addSl')await insertSlide(doc.cur,false);
+  else if(t==='dupSl')await insertSlide(doc.cur,true);
+  else if(t==='up'||t==='down')moveSlide(doc.cur,t==='up'?-1:1);
+  else if(t==='delSl'){if(doc.slides.length<2){toast('슬라이드가 하나뿐이라 지울 수 없어요');return}if(await ask(`${doc.cur+1}번 슬라이드를 지울까요?`,'내려받기 전까지는 원본 파일이 바뀌지 않아요.','지우기',true))deleteSlide(doc.cur)}
+  else if(t==='play')startShow(doc.cur);
+};
+function addTextBox(i){
+  const s=doc.slides[i];doc.cur=i;
+  const D=s.part.dom;const tree=D.getElementsByTagNameNS(PNS,'spTree')[0];const id=maxId(D)+1;
+  const w=Math.round(doc.cx*.6),h=Math.round(doc.cy*.14),x=Math.round((doc.cx-w)/2),y=Math.round((doc.cy-h)/2);
+  const xml=`<p:sp xmlns:p="${PNS}" xmlns:a="${ANS}"><p:nvSpPr><p:cNvPr id="${id}" name="TextBox ${id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr wrap="square" rtlCol="0"><a:spAutoFit/></a:bodyPr><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="ko-KR" altLang="en-US" sz="2800" dirty="0"/><a:t>새 글상자</a:t></a:r></a:p></p:txBody></p:sp>`;
+  const node=D.importNode(parseXml(xml).documentElement,true);
+  tree.insertBefore(node,kid(tree,'extLst'));
+  rerenderSlide(i);markDirty();
+  const k=s.shapes.indexOf(node);const d=$(`#slides .sw[data-i="${i}"] .shp[data-k="${k}"]`);
+  if(d){selectShape(i,k,d);editSelected(d)}
+}
+function ctOverride(part,type){const o=doc.ct.createElementNS(CTNS,'Override');o.setAttribute('PartName','/'+part);o.setAttribute('ContentType',type);doc.ct.documentElement.appendChild(o)}
+function ctRemove(part){for(const o of [...doc.ct.getElementsByTagNameNS(CTNS,'Override')])if(o.getAttribute('PartName')==='/'+part)o.parentNode.removeChild(o)}
+let ridSeq=0;
+async function insertSlide(after,copy){
+  const src=doc.slides[after];const pres=doc.parts['ppt/presentation.xml'];
+  let n=1;doc.zip.forEach(p=>{const m=/^ppt\/slides\/slide(\d+)\.xml$/.exec(p);if(m)n=Math.max(n,+m[1]+1)});
+  for(const p in doc.parts){const m=/^ppt\/slides\/slide(\d+)\.xml$/.exec(p);if(m)n=Math.max(n,+m[1]+1)}
+  const path=`ppt/slides/slide${n}.xml`;
+  let xml,rels;
+  if(copy){xml=serXml(src.part.dom);const rd=src.part.relsDom?parseXml(serXml(src.part.relsDom)):null;if(rd){for(const r of [...rd.getElementsByTagNameNS(RELNS,'Relationship')])if(/\/notesSlide$/.test(r.getAttribute('Type')))r.parentNode.removeChild(r);rels=serXml(rd)}}
+  else{xml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<p:sld xmlns:a="${ANS}" xmlns:r="${RNS}" xmlns:p="${PNS}"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
+    const lt=src.layout?src.layout.path.replace(/^ppt\//,'../'):'../slideLayouts/slideLayout1.xml';
+    rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="${RELNS}"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="${lt}"/></Relationships>`}
+  doc.zip.file(path,xml);if(rels)doc.zip.file(relsPathOf(path),rels);
+  ctOverride(path,'application/vnd.openxmlformats-officedocument.presentationml.slide+xml');
+  const rid='rIdBo'+Date.now().toString(36)+(ridSeq++);
+  const rel=pres.relsDom.createElementNS(RELNS,'Relationship');rel.setAttribute('Id',rid);rel.setAttribute('Type','http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide');rel.setAttribute('Target',`slides/slide${n}.xml`);pres.relsDom.documentElement.appendChild(rel);
+  pres.rels[rid]={type:rel.getAttribute('Type'),target:path};
+  let maxSid=255;for(const x of pres.dom.getElementsByTagNameNS(PNS,'sldId'))maxSid=Math.max(maxSid,+x.getAttribute('id'));
+  const sid=pres.dom.createElementNS(PNS,'p:sldId');sid.setAttribute('id',maxSid+1);sid.setAttributeNS(RNS,'r:id',rid);
+  src.sldId.parentNode.insertBefore(sid,src.sldId.nextSibling);
+  const ns=await loadSlide(path);ns.sldId=sid;doc.slides.splice(after+1,0,ns);
+  doc.cur=after+1;doc.sel=null;renderAllSlides();updateDeckTools();markDirty();
+  const w=$(`#slides .sw[data-i="${doc.cur}"]`);if(w)w.scrollIntoView({block:'center'});
+  toast(copy?'슬라이드를 복제했어요':'빈 슬라이드를 넣었어요');
+}
+function moveSlide(i,dir){
+  const j=i+dir;if(j<0||j>=doc.slides.length)return;
+  const a=doc.slides[i],b=doc.slides[j];const lst=a.sldId.parentNode;
+  if(dir<0)lst.insertBefore(a.sldId,b.sldId);else lst.insertBefore(b.sldId,a.sldId);
+  doc.slides[i]=b;doc.slides[j]=a;doc.cur=j;renderAllSlides();updateDeckTools();markDirty();
+  const w=$(`#slides .sw[data-i="${j}"]`);if(w)w.scrollIntoView({block:'center'});
+}
+function deleteSlide(i){
+  const s=doc.slides[i],pres=doc.parts['ppt/presentation.xml'];
+  const rid=s.sldId.getAttributeNS(RNS,'id');s.sldId.parentNode.removeChild(s.sldId);
+  for(const r of [...pres.relsDom.getElementsByTagNameNS(RELNS,'Relationship')])if(r.getAttribute('Id')===rid)r.parentNode.removeChild(r);
+  delete pres.rels[rid];
+  const notes=relOfType(s.part,'/notesSlide');
+  for(const p of [s.part.path,notes].filter(Boolean)){doc.zip.remove(p);doc.zip.remove(relsPathOf(p));ctRemove(p);delete doc.parts[p]}
+  doc.slides.splice(i,1);doc.cur=Math.min(i,doc.slides.length-1);doc.sel=null;renderAllSlides();updateDeckTools();markDirty();toast('슬라이드를 지웠어요');
+}
+async function buildDeckFile(){
+  const z=doc.zip;
+  for(const s of doc.slides){z.file(s.part.path,serXml(s.part.dom));if(s.part.relsDom)z.file(relsPathOf(s.part.path),serXml(s.part.relsDom))}
+  const pres=doc.parts['ppt/presentation.xml'];z.file(pres.path,serXml(pres.dom));z.file(relsPathOf(pres.path),serXml(pres.relsDom));
+  z.file('[Content_Types].xml',serXml(doc.ct));
+  return{bytes:await z.generateAsync({type:'arraybuffer',compression:'DEFLATE'}),name:doc.rec.name};
+}
+let rsT;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>{if(doc&&doc.kind==='deck'&&!$('#show').classList.contains('on'))renderAllSlides();if($('#show').classList.contains('on'))drawShow()},200)});
+
+/* 발표 모드 */
+let showI=0;
+function startShow(i){showI=i;$('#show').classList.add('on');try{const r=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();if(r&&r.catch)r.catch(()=>{})}catch(e){}drawShow()}
+function drawShow(){const sh=$('#show');const old=sh.querySelector('.slide');if(old)old.remove();const sc=Math.min(window.innerWidth/doc.cx,window.innerHeight/doc.cy);const d=drawSlide(doc.slides[showI],sc,false);d.style.borderRadius='0';d.style.boxShadow='none';sh.insertBefore(d,sh.firstChild);$('#showCnt').textContent=`${showI+1} / ${doc.slides.length}`}
+function endShow(){$('#show').classList.remove('on');try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}renderAllSlides()}
+function stepShow(d){const n=showI+d;if(n<0)return;if(n>=doc.slides.length){endShow();return}showI=n;drawShow()}
+$('#showX').onclick=e=>{e.stopPropagation();endShow()};
+let sx0=null;
+$('#show').addEventListener('pointerdown',e=>{sx0=e.clientX});
+$('#show').addEventListener('pointerup',e=>{if(e.target.id==='showX'||sx0==null)return;const dx=e.clientX-sx0;sx0=null;if(Math.abs(dx)>40)stepShow(dx<0?1:-1);else stepShow(e.clientX<window.innerWidth/3?-1:1)});
+document.addEventListener('keydown',e=>{if(!$('#show').classList.contains('on'))return;if(['ArrowRight','ArrowDown',' ','PageDown','Enter'].includes(e.key)){e.preventDefault();stepShow(1)}else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();stepShow(-1)}else if(e.key==='Escape')endShow()});
+
+/* 새 PPT · 예시 PPT (PptxGenJS를 필요할 때만 불러옴) */
+let pgPromise=null;
+function loadPptxGen(){if(window.PptxGenJS)return Promise.resolve();if(!pgPromise)pgPromise=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';s.onload=res;s.onerror=()=>{pgPromise=null;rej(new Error('load'))};document.head.appendChild(s)});return pgPromise}
+async function makeDeck(sample){
+  loading(true,'만드는 중…');
+  try{await loadPptxGen();const p=new PptxGenJS();p.layout='LAYOUT_WIDE';
+    const F='Malgun Gothic';
+    if(!sample){const s=p.addSlide();s.addText('제목을 입력하세요',{x:0.8,y:2.6,w:11.7,h:1.2,fontSize:40,bold:true,align:'center',fontFace:F,color:'1F2328'});s.addText('부제목',{x:0.8,y:3.8,w:11.7,h:0.7,fontSize:20,align:'center',fontFace:F,color:'6B7280'})}
+    else{
+      const a=p.addSlide();a.background={color:'14324A'};a.addText('2분기 판매 보고',{x:0.8,y:2.4,w:11.7,h:1.3,fontSize:44,bold:true,color:'FFFFFF',fontFace:F});a.addText('영업팀 · 7월 첫째 주 회의',{x:0.8,y:3.7,w:11.7,h:0.6,fontSize:20,color:'BFD3E3',fontFace:F});a.addShape(p.ShapeType.rect,{x:0.8,y:2.2,w:1.2,h:0.08,fill:{color:'F2A541'}});
+      const b=p.addSlide();b.addText('핵심 요약',{x:0.6,y:0.4,w:12,h:0.9,fontSize:32,bold:true,color:'14324A',fontFace:F});
+      b.addText([{text:'매출 1억 3,970만 원, 1분기보다 12% 늘었어요',options:{bullet:true}},{text:'온라인 비중 58% → 64%',options:{bullet:true}},{text:'재고 회전일 41일에서 33일로 줄었어요',options:{bullet:true}}],{x:0.6,y:1.5,w:7.2,h:3.6,fontSize:22,color:'333333',fontFace:F,paraSpaceAfter:12});
+      b.addShape(p.ShapeType.roundRect,{x:8.4,y:1.6,w:4.3,h:2.4,fill:{color:'E8F1F8'},rectRadius:0.2});b.addText([{text:'+12%',options:{fontSize:54,bold:true,color:'1D6FA5',breakLine:true}},{text:'전 분기 대비 매출',options:{fontSize:16,color:'4B5563'}}],{x:8.4,y:1.6,w:4.3,h:2.4,align:'center',fontFace:F});
+      const c=p.addSlide();c.addText('월별 실적',{x:0.6,y:0.4,w:12,h:0.9,fontSize:32,bold:true,color:'14324A',fontFace:F});
+      c.addTable([[{text:'월',options:{bold:true,color:'FFFFFF',fill:{color:'14324A'}}},{text:'매출(만 원)',options:{bold:true,color:'FFFFFF',fill:{color:'14324A'}}},{text:'목표 달성',options:{bold:true,color:'FFFFFF',fill:{color:'14324A'}}}],['4월','4,520','98%'],['5월','4,610','101%'],['6월','4,840','106%']],{x:0.6,y:1.6,w:8,colW:[2,3,3],fontSize:18,fontFace:F,border:{type:'solid',color:'D0D7DE',pt:1},rowH:0.6});
+      c.addText('표 안의 칸도 두 번 눌러 고칠 수 있어요',{x:0.6,y:5.2,w:8,h:0.5,fontSize:14,color:'6B7280',fontFace:F});
+    }
+    const buf=await p.write({outputType:'arraybuffer'});
+    loading(false);openRecord({id:(sample?'s':'n')+Date.now(),name:sample?'예시_판매보고.pptx':'새 프레젠테이션.pptx',kind:'deck',buf,updated:Date.now()});
+  }catch(e){loading(false);console.error(e);toast('새 PPT를 만들지 못했어요. 인터넷 연결을 확인해 주세요.')}
+}
+$('#newDeck').onclick=()=>makeDeck(false);
+$('#sampleP').onclick=()=>makeDeck(true);
+
+window.addEventListener('pagehide',()=>{if(doc&&doc.dirty)persist(true)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&doc&&doc.dirty)persist(true)});
+try{if(window.self!==window.top)$('#appHint').hidden=false}catch(e){$('#appHint').hidden=false}
+refreshRecent();
+</script>
+</body>
+</html>
