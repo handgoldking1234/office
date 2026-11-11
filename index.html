@@ -443,6 +443,12 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
 .bnav{position:relative;z-index:10;overflow:visible}
 .hscroll{position:relative;z-index:0}
 .home{padding-bottom:56px}
+
+/* 엑셀 그림 · 차트 자리 */
+.gz{position:relative;width:max-content}
+.gimgs{position:absolute;left:0;top:0;pointer-events:none}
+.gimgs img,.gch{position:absolute;display:block}
+.gch{background:rgba(120,120,120,.12);border:1px dashed #999;display:grid;place-items:center;font-size:12px;color:#666}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -761,9 +767,31 @@ async function openSheetDoc(rec){
   else wb=XLSX.read(new Uint8Array(rec.buf),{type:'array',cellFormula:true,cellNF:true,cellStyles:true});
   let zip=null,map={};
   if(ext==='xlsx'||ext==='xlsm'){try{zip=await JSZip.loadAsync(rec.buf);map=await sheetPathMap(zip)}catch(e){zip=null}}
-  doc={kind:'sheet',rec,wb,zip,map,edits:{},si:0,sel:{r:0,c:0},rowLimit:500,zoom:1,dirty:false,patch:!!zip&&Object.keys(map).length===wb.SheetNames.length};
+  const imgs=zip?await sheetImages(zip,map):{};
+  doc={kind:'sheet',rec,wb,zip,map,imgs,edits:{},si:0,sel:{r:0,c:0},rowLimit:500,zoom:1,dirty:false,patch:!!zip&&Object.keys(map).length===wb.SheetNames.length};
   for(const n of wb.SheetNames)recalc(wb.Sheets[n]);
   show('sheetView');setTitle();renderTabs();renderGrid();selectCell(0,0);
+}
+const XDR='http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing';
+async function readRels(zip,path){const o={},f=zip.file(relsPathOf(path));if(!f)return o;const d=parseXml(await f.async('string'));for(const r of d.getElementsByTagNameNS(RELNS,'Relationship'))if(r.getAttribute('TargetMode')!=='External')o[r.getAttribute('Id')]=resolvePath(path,r.getAttribute('Target'));return o}
+/* 시트에 놓인 그림과 차트 위치 읽기 (xl/drawings) */
+async function sheetImages(zip,map){
+  const out={},MIME={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',bmp:'image/bmp',webp:'image/webp',svg:'image/svg+xml'},cache={};
+  for(const name in map){try{
+    const sp=map[name],sf=zip.file(sp);if(!sf)continue;const m=/<(?:\w+:)?drawing\b[^>]*\bid="([^"]+)"/.exec(await sf.async('string'));if(!m)continue;
+    const dp=(await readRels(zip,sp))[m[1]];if(!dp||!zip.file(dp))continue;
+    const dd=parseXml(await zip.file(dp).async('string')),dr=await readRels(zip,dp),list=[];
+    for(const a of dd.documentElement.children){
+      if(!/Anchor$/.test(a.localName))continue;
+      const pos=n=>{const e=kid(a,n);if(!e)return null;const g=k=>{const x=kid(e,k);return x?+x.textContent:0};return{c:g('col'),co:g('colOff'),r:g('row'),ro:g('rowOff')}};
+      const f=pos('from'),t=pos('to'),ext=kid(a,'ext'),bl=a.getElementsByTagNameNS(ANS,'blip')[0];let url=null;
+      if(bl){const tp=dr[bl.getAttributeNS(RNS,'embed')],mime=tp&&MIME[extOf(tp)];if(mime&&zip.file(tp))url=cache[tp]||(cache[tp]=URL.createObjectURL(new Blob([await zip.file(tp).async('arraybuffer')],{type:mime})))}
+      const chart=!bl&&a.getElementsByTagNameNS(XDR,'graphicFrame').length>0;
+      if(f&&(url||chart))list.push({f,t,w:ext?+ext.getAttribute('cx'):0,h:ext?+ext.getAttribute('cy'):0,url,chart});
+    }
+    if(list.length)out[name]=list;
+  }catch(e){console.warn('drawing',e)}}
+  return out;
 }
 async function sheetPathMap(zip){
   const wbx=parseXml(await zip.file('xl/workbook.xml').async('string'));
@@ -785,7 +813,7 @@ function renderTabs(){
   if(!doc.patch){const a=el('button','tab','+ 시트');a.onclick=()=>{let k=doc.wb.SheetNames.length+1;while(doc.wb.SheetNames.includes('Sheet'+k))k++;XLSX.utils.book_append_sheet(doc.wb,XLSX.utils.aoa_to_sheet([[]]),'Sheet'+k);doc.si=doc.wb.SheetNames.length-1;renderTabs();renderGrid();selectCell(0,0);markDirty()};t.appendChild(a)}
   t.appendChild(el('span','sp'));
   const z=el('div','zoom',`<button class="ib" data-z="-1" aria-label="축소">${ic('minus',18)}</button><span>${Math.round(doc.zoom*100)}%</span><button class="ib" data-z="1" aria-label="확대">${ic('plus',18)}</button>`);
-  z.onclick=e=>{const d=e.target.closest('[data-z]');if(!d)return;doc.zoom=Math.min(2,Math.max(.5,Math.round((doc.zoom+ +d.dataset.z*.1)*10)/10));const g=$('table.grid');if(g)g.style.zoom=doc.zoom;z.querySelector('span').textContent=Math.round(doc.zoom*100)+'%'};
+  z.onclick=e=>{const d=e.target.closest('[data-z]');if(!d)return;doc.zoom=Math.min(2,Math.max(.5,Math.round((doc.zoom+ +d.dataset.z*.1)*10)/10));const g=$('#gridWrap .gz');if(g)g.style.zoom=doc.zoom;z.querySelector('span').textContent=Math.round(doc.zoom*100)+'%'};
   t.appendChild(z);
 }
 
@@ -803,18 +831,20 @@ function cellBg(c){const s=c&&c.s;if(!s)return'';const fg=s.fgColor;if(s.pattern
 function renderGrid(){
   const ws=curWs(),U=XLSX.utils;
   const rg=ws['!ref']?U.decode_range(ws['!ref']):{s:{r:0,c:0},e:{r:0,c:0}};
-  const nR=Math.min(Math.max(rg.e.r+1+30,60),doc.rowLimit),nC=Math.min(Math.max(rg.e.c+1+6,15),400);
+  const imgs=(doc.imgs&&doc.imgs[doc.wb.SheetNames[doc.si]])||[],iR=Math.max(0,...imgs.map(m=>(m.t?m.t.r:m.f.r)+2)),iC=Math.max(0,...imgs.map(m=>(m.t?m.t.c:m.f.c)+2));
+  const nR=Math.min(Math.max(rg.e.r+1+30,60,iR),Math.max(doc.rowLimit,Math.min(iR,2000))),nC=Math.min(Math.max(rg.e.c+1+6,15,iC),400);
   doc.nR=nR;doc.nC=nC;
   const cover=new Set(),start={};
   for(const m of ws['!merges']||[]){start[m.s.r+','+m.s.c]=[m.e.r-m.s.r+1,m.e.c-m.s.c+1];for(let r=m.s.r;r<=m.e.r;r++)for(let c=m.s.c;c<=m.e.c;c++)if(r!==m.s.r||c!==m.s.c)cover.add(r+','+c)}
   const cols=ws['!cols']||[],rows=ws['!rows']||[];
-  const h=['<table class="grid" style="zoom:'+doc.zoom+'"><colgroup><col style="width:44px">'];
-  for(let c=0;c<nC;c++){const ci=cols[c];let w=ci?(ci.hidden?0:(ci.wpx||(ci.wch?ci.wch*7+10:(ci.width?ci.width*7+5:0)))):0;if(!w)w=84;h.push(`<col style="width:${Math.max(w,24)}px">`)}
+  const colW=[],rowH=[];
+  const h=['<div class="gz" style="zoom:'+doc.zoom+'"><table class="grid"><colgroup><col style="width:44px">'];
+  for(let c=0;c<nC;c++){const ci=cols[c];let w=ci?(ci.hidden?0:(ci.wpx||(ci.wch?ci.wch*7+10:(ci.width?ci.width*7+5:0)))):0;if(!w)w=84;colW.push(Math.max(w,24));h.push(`<col style="width:${Math.max(w,24)}px">`)}
   h.push('</colgroup><thead><tr><th></th>');
   for(let c=0;c<nC;c++)h.push(`<th data-ch="${c}">${U.encode_col(c)}</th>`);
   h.push('</tr></thead><tbody>');
   for(let r=0;r<nR;r++){
-    const ri=rows[r];const rh=ri&&ri.hpx?`height:${Math.max(ri.hpx,18)}px`:'';
+    const ri=rows[r];rowH.push(ri&&ri.hidden?0:(ri&&ri.hpx?Math.max(ri.hpx,18):26));const rh=ri&&ri.hpx?`height:${Math.max(ri.hpx,18)}px`:'';
     h.push(`<tr style="${ri&&ri.hidden?'display:none':rh}"><th data-rh="${r}">${r+1}</th>`);
     for(let c=0;c<nC;c++){
       const k=r+','+c;if(cover.has(k))continue;
@@ -826,7 +856,10 @@ function renderGrid(){
     }
     h.push('</tr>');
   }
-  h.push('</tbody></table>');
+  let ov='';const cx=c=>{let x=44;for(let i=0;i<c&&i<colW.length;i++)x+=colW[i];return x},ry=r=>{let y=26;for(let i=0;i<r&&i<rowH.length;i++)y+=rowH[i];return y};
+  for(const im of imgs){const x=cx(im.f.c)+im.f.co/9525,y=ry(im.f.r)+im.f.ro/9525,w=im.t?cx(im.t.c)+im.t.co/9525-x:im.w/9525,hh=im.t?ry(im.t.r)+im.t.ro/9525-y:im.h/9525;if(!(w>0&&hh>0))continue;
+    const st=`left:${x}px;top:${y}px;width:${w}px;height:${hh}px`;ov+=im.url?`<img src="${im.url}" alt="" style="${st}">`:`<div class="gch" style="${st}">차트 (원본 유지)</div>`}
+  h.push('</tbody></table><div class="gimgs">'+ov+'</div></div>');
   if(rg.e.r+1>nR)h.push(`<div class="more"><button class="btn" id="moreRows">아래 500행 더 보기 (전체 ${rg.e.r+1}행)</button></div>`);
   const w=$('#gridWrap');w.innerHTML=h.join('');
   const mb=$('#moreRows');if(mb)mb.onclick=()=>{doc.rowLimit+=500;const st=w.scrollTop;renderGrid();w.scrollTop=st;selectCell(doc.sel.r,doc.sel.c,true)};
