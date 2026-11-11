@@ -449,6 +449,28 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
 .gimgs{position:absolute;left:0;top:0;pointer-events:none}
 .gimgs img,.gch{position:absolute;display:block}
 .gch{background:rgba(120,120,120,.12);border:1px dashed #999;display:grid;place-items:center;font-size:12px;color:#666}
+
+/* 엑셀 서식 도구막대 · 범위 선택 */
+.xbar{border-top:0;border-bottom:1px solid var(--line);padding:4px 8px;gap:0;align-items:center}
+.xbar .tb{min-width:38px;padding:8px}
+.xbar .tb b.tx{font-size:14px;font-weight:700;line-height:22px;min-width:22px;text-align:center;font-family:var(--body)}
+.xbar .tb.off{opacity:.35}
+.grid td{vertical-align:bottom}
+.grid td.sel{box-shadow:none;outline:2px solid var(--sel);outline-offset:-2px}
+.grid td.in{background-image:linear-gradient(rgba(10,102,216,.14),rgba(10,102,216,.14))}
+.pop .sws{padding:6px;max-width:190px}
+
+.pn select{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;padding:8px 0}
+.shp.phe{outline:1px dashed #b6bcc6}
+.shp.phe::after{content:"눌러서 선택 · 한 번 더 눌러 글자 입력";position:absolute;inset:0;display:grid;place-items:center;font-size:11px;color:#9aa1ab;pointer-events:none;text-align:center}
+.shp.phe.sel::after{content:""}
+
+/* 도구막대는 PC에서도 아이콘만 (이름은 마우스를 올리면 표시) */
+.tb span{display:none}
+.tb.go span{display:inline}
+.tb{min-width:42px;padding:10px 9px}
+.tb.has{padding-right:16px}
+@media(max-width:899px){.tb.go span{display:none}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -511,6 +533,7 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
       <div class="addr" id="addr">A1</div>
       <input id="fxIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="값 또는 =SUM(A1:A5)" enterkeyhint="done" aria-label="셀 내용">
     </div>
+    <div class="tools xbar" id="sheetTools"></div>
     <div class="gridwrap" id="gridWrap"></div>
     <div class="tabs" id="tabs"></div>
   </section>
@@ -596,6 +619,19 @@ arrowR:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',arrowBig:'<path d="M6 9h6
 table:'<path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>',
 pen:'<path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z"/><path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18"/><path d="m2.3 2.3 7.286 7.286"/><circle cx="11" cy="11" r="2"/>',
 save:'<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>',check:'<path d="M20 6 9 17l-5-5"/>',
+strike:'<path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" x2="20" y1="12" y2="12"/>',
+bucket:'<path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/>',
+merge:'<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
+wrap:'<line x1="3" x2="21" y1="6" y2="6"/><path d="M3 12h15a3 3 0 1 1 0 6h-4"/><polyline points="16 16 14 18 16 20"/><line x1="3" x2="10" y1="18" y2="18"/>',
+sigma:'<path d="M18 7V5a1 1 0 0 0-1-1H6.5a.5.5 0 0 0-.4.8l4.5 6a2 2 0 0 1 0 2.4l-4.5 6a.5.5 0 0 0 .4.8H17a1 1 0 0 0 1-1v-2"/>',
+tcolor:'<path d="M4 20h16"/><path d="m6 16 6-12 6 12"/><path d="M8 12h8"/>',
+range:'<path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h1"/><path d="M14 3h1"/><path d="M14 21h1"/><path d="M3 9v1"/><path d="M21 9v1"/><path d="M3 14v1"/><path d="M21 14v1"/>',
+cut:'<circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/>',
+brush:'<path d="m14.622 17.897-10.68-2.913"/><path d="M18.376 2.622a1 1 0 1 1 3.002 3.002L17.36 9.643a.5.5 0 0 0 0 .707l.944.945a2.41 2.41 0 0 1 0 3.408l-.944.944a.5.5 0 0 1-.707 0L8.354 7.348a.5.5 0 0 1 0-.707l.944-.944a2.41 2.41 0 0 1 3.408 0l.944.944a.5.5 0 0 0 .707 0z"/><path d="M9 8c-1.804 2.71-3.97 3.46-6.583 3.948a.507.507 0 0 0-.302.819l7.32 8.883a1 1 0 0 0 1.185.204C12.735 20.405 16 16.792 16 15"/>',
+list:'<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
+listn:'<path d="M10 12h11"/><path d="M10 18h11"/><path d="M10 6h11"/><path d="M4 10h2"/><path d="M4 6h1v4"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>',
+indent:'<path d="M21 12H11"/><path d="M21 18H11"/><path d="M21 6H11"/><path d="m3 8 4 4-4 4"/>',outdent:'<path d="M21 12H11"/><path d="M21 18H11"/><path d="M21 6H11"/><path d="m7 8-4 4 4 4"/>',
+alignj:'<path d="M3 12h18"/><path d="M3 18h18"/><path d="M3 6h18"/>',
 front:'<rect x="8" y="8" width="8" height="8" rx="2"/><path d="M4 10a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2"/><path d="M14 20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2"/>'};
 function ic(n,sz=20){return `<svg class="lu" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`}
 for(const e of [...document.querySelectorAll('[data-ic]')])e.outerHTML=ic(e.dataset.ic,+e.dataset.s||20);
@@ -768,9 +804,11 @@ async function openSheetDoc(rec){
   let zip=null,map={};
   if(ext==='xlsx'||ext==='xlsm'){try{zip=await JSZip.loadAsync(rec.buf);map=await sheetPathMap(zip)}catch(e){zip=null}}
   const imgs=zip?await sheetImages(zip,map):{};
-  doc={kind:'sheet',rec,wb,zip,map,imgs,edits:{},si:0,sel:{r:0,c:0},rowLimit:500,zoom:1,dirty:false,patch:!!zip&&Object.keys(map).length===wb.SheetNames.length};
+  let sty=null;const sidx={};
+  if(zip&&Object.keys(map).length===wb.SheetNames.length){try{sty=await loadStyles(zip);if(sty)for(const n in map){const m=sidx[n]={},f=zip.file(map[n]);if(!f)continue;const x=await f.async('string'),re=/<c\b([^>]*)>/g;let q;while((q=re.exec(x))){const r=/\br="([A-Z]+[0-9]+)"/.exec(q[1]),t=/\bs="(\d+)"/.exec(q[1]);if(r&&t)m[r[1]]=+t[1]}}}catch(e){console.warn('styles',e);sty=null}}
+  doc={kind:'sheet',rec,wb,zip,map,imgs,sty,sidx,fmt:{},mergeDirty:{},undo:[],redo:[],rng:null,edits:{},si:0,sel:{r:0,c:0},rowLimit:500,zoom:1,dirty:false,patch:!!zip&&Object.keys(map).length===wb.SheetNames.length};
   for(const n of wb.SheetNames)recalc(wb.Sheets[n]);
-  show('sheetView');setTitle();renderTabs();renderGrid();selectCell(0,0);
+  show('sheetView');setTitle();sheetBar();renderTabs();renderGrid();selectCell(0,0);
 }
 const XDR='http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing';
 async function readRels(zip,path){const o={},f=zip.file(relsPathOf(path));if(!f)return o;const d=parseXml(await f.async('string'));for(const r of d.getElementsByTagNameNS(RELNS,'Relationship'))if(r.getAttribute('TargetMode')!=='External')o[r.getAttribute('Id')]=resolvePath(path,r.getAttribute('Target'));return o}
@@ -829,7 +867,7 @@ function fmtNum(v,z){if(z&&z!=='General'){try{return XLSX.SSF.format(z,v)}catch(
 function cellBg(c){const s=c&&c.s;if(!s)return'';const fg=s.fgColor;if(s.patternType&&s.patternType!=='none'&&fg&&fg.rgb&&/^[0-9A-F]{6,8}$/i.test(fg.rgb)){const h=fg.rgb.slice(-6);if(h.toUpperCase()!=='FFFFFF')return'#'+h}return''}
 
 function renderGrid(){
-  const ws=curWs(),U=XLSX.utils;
+  const ws=curWs(),U=XLSX.utils,SN=doc.wb.SheetNames[doc.si];
   const rg=ws['!ref']?U.decode_range(ws['!ref']):{s:{r:0,c:0},e:{r:0,c:0}};
   const imgs=(doc.imgs&&doc.imgs[doc.wb.SheetNames[doc.si]])||[],iR=Math.max(0,...imgs.map(m=>(m.t?m.t.r:m.f.r)+2)),iC=Math.max(0,...imgs.map(m=>(m.t?m.t.c:m.f.c)+2));
   const nR=Math.min(Math.max(rg.e.r+1+30,60,iR),Math.max(doc.rowLimit,Math.min(iR,2000))),nC=Math.min(Math.max(rg.e.c+1+6,15,iC),400);
@@ -850,9 +888,9 @@ function renderGrid(){
       const k=r+','+c;if(cover.has(k))continue;
       const a=U.encode_cell({r,c}),cell=ws[a];
       const sp=start[k];const span=sp?` rowspan="${sp[0]}" colspan="${sp[1]}"`:'';
-      const bg=cellBg(cell);
+      const bg=doc.sty?'':cellBg(cell),css=doc.sty?cellCss(effSty(SN,a)):(bg?`background:${bg};color:#111`:'');
       const cls=cell&&(cell.t==='n')?' class="num"':'';
-      h.push(`<td data-r="${r}" data-c="${c}"${span}${cls}${bg?` style="background:${bg};color:#111"`:''}>${esc(cellText(cell))}</td>`);
+      h.push(`<td data-r="${r}" data-c="${c}"${span}${cls}${css?` style="${css}"`:''}>${esc(cellText(cell))}</td>`);
     }
     h.push('</tr>');
   }
@@ -870,7 +908,7 @@ function selectCell(r,c,noScroll){
   const U=XLSX.utils;
   r=Math.max(0,Math.min(r,doc.nR-1));c=Math.max(0,Math.min(c,doc.nC-1));
   for(const x of document.querySelectorAll('#gridWrap .sel,#gridWrap .hl'))x.classList.remove('sel','hl');
-  doc.sel={r,c};
+  doc.sel={r,c};doc.rng={r1:r,c1:c,r2:r,c2:c};for(const x of document.querySelectorAll('#gridWrap td.in'))x.classList.remove('in');
   const td=tdAt(r,c);if(td){td.classList.add('sel');if(!noScroll)td.scrollIntoView({block:'nearest',inline:'nearest'})}
   const ch=$(`#gridWrap th[data-ch="${c}"]`),rh=$(`#gridWrap th[data-rh="${r}"]`);if(ch)ch.classList.add('hl');if(rh)rh.classList.add('hl');
   const a=U.encode_cell({r,c});$('#addr').textContent=a;
@@ -878,7 +916,23 @@ function selectCell(r,c,noScroll){
   fxOrig=cell?(cell.f?'='+cell.f:(cell.t==='n'&&cell.z&&/%/.test(cell.z)?cellText(cell):(cell.v!=null?(cell.t==='b'?(cell.v?'TRUE':'FALSE'):String(cell.v)):''))):'';
   $('#fxIn').value=fxOrig;
 }
-$('#gridWrap').addEventListener('click',e=>{const td=e.target.closest('td[data-r]');if(!td)return;selectCell(+td.dataset.r,+td.dataset.c,true)});
+let gDrag=false,gMoved=false;
+function paintRange(){const g=doc.rng;if(!g)return;const multi=g.r1!==g.r2||g.c1!==g.c2;for(const td of document.querySelectorAll('#gridWrap td[data-r]')){const r=+td.dataset.r,c=+td.dataset.c;td.classList.toggle('in',multi&&r>=g.r1&&r<=g.r2&&c>=g.c1&&c<=g.c2)}}
+function extendTo(r,c){const a=doc.sel;doc.rng={r1:Math.min(a.r,r),c1:Math.min(a.c,c),r2:Math.max(a.r,r),c2:Math.max(a.c,c)};paintRange();$('#addr').textContent=XLSX.utils.encode_range({s:{r:doc.rng.r1,c:doc.rng.c1},e:{r:doc.rng.r2,c:doc.rng.c2}})}
+function usedEnd(){const ws=curWs();return ws['!ref']?XLSX.utils.decode_range(ws['!ref']).e:{r:0,c:0}}
+$('#gridWrap').addEventListener('mousedown',e=>{if(e.button||e.shiftKey||!doc||doc.kind!=='sheet')return;const td=e.target.closest('td[data-r]');if(!td)return;commitFx();selectCell(+td.dataset.r,+td.dataset.c,true);gDrag=true;gMoved=false});
+$('#gridWrap').addEventListener('mouseover',e=>{if(!gDrag)return;const td=e.target.closest('td[data-r]');if(!td)return;const r=+td.dataset.r,c=+td.dataset.c;if(r!==doc.sel.r||c!==doc.sel.c||gMoved){gMoved=true;extendTo(r,c)}});
+document.addEventListener('mouseup',()=>{gDrag=false});
+$('#gridWrap').addEventListener('click',e=>{
+  if(!doc||doc.kind!=='sheet')return;
+  const ch=e.target.closest('th[data-ch]'),rh=e.target.closest('th[data-rh]');
+  if(ch){const c=+ch.dataset.ch;selectCell(0,c,true);extendTo(usedEnd().r,c);return}
+  if(rh){const r=+rh.dataset.rh;selectCell(r,0,true);extendTo(r,usedEnd().c);return}
+  const td=e.target.closest('td[data-r]');if(!td)return;
+  if(gMoved){gMoved=false;return}
+  if(e.shiftKey||doc.rngMode){doc.rngMode=false;extendTo(+td.dataset.r,+td.dataset.c);sheetBar();return}
+  selectCell(+td.dataset.r,+td.dataset.c,true);
+});
 $('#gridWrap').addEventListener('dblclick',e=>{const td=e.target.closest('td[data-r]');if(!td)return;const i=$('#fxIn');i.focus();i.setSelectionRange(i.value.length,i.value.length)});
 const fxIn=$('#fxIn');
 function commitFx(){if(doc&&doc.kind==='sheet'&&fxIn.value!==fxOrig){setCell(doc.sel.r,doc.sel.c,fxIn.value);fxOrig=fxIn.value}}
@@ -892,15 +946,19 @@ fxIn.addEventListener('blur',commitFx);
 document.addEventListener('keydown',e=>{
   if(!doc||doc.kind!=='sheet'||$('#scrim').classList.contains('on'))return;
   if(document.activeElement===fxIn)return;
-  const k=e.key,s=doc.sel;
+  const k=e.key,s=doc.sel,mod=e.ctrlKey||e.metaKey;
+  if(mod){const kk=k.toLowerCase();if(kk==='z'){e.preventDefault();undoX(e.shiftKey);return}if(kk==='y'){e.preventDefault();undoX(true);return}if(kk==='b'||kk==='i'){e.preventDefault();sheetAct(kk);return}return}
+  if(e.shiftKey&&k.startsWith('Arrow')){e.preventDefault();const g=doc.rng,fr=g.r1===s.r?g.r2:g.r1,fc=g.c1===s.c?g.c2:g.c1,d={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[k];extendTo(Math.max(0,Math.min(doc.nR-1,fr+d[0])),Math.max(0,Math.min(doc.nC-1,fc+d[1])));return}
+  if((k==='Delete'||k==='Backspace')&&doc.rng&&(doc.rng.r1!==doc.rng.r2||doc.rng.c1!==doc.rng.c2)){e.preventDefault();clearRange();return}
   const mv={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1],Enter:[1,0],Tab:[0,1]}[k];
   if(mv){e.preventDefault();selectCell(s.r+mv[0],s.c+mv[1]);return}
   if(k==='Delete'||k==='Backspace'){e.preventDefault();setCell(s.r,s.c,'');selectCell(s.r,s.c,true);return}
   if(k.length===1&&!e.ctrlKey&&!e.metaKey&&!e.altKey){fxIn.focus();fxIn.value='';}
 });
 
-function setCell(r,c,text){
+function setCell(r,c,text,batch){
   const U=XLSX.utils,ws=curWs(),a=U.encode_cell({r,c}),name=doc.wb.SheetNames[doc.si];
+  if(!batch)pushUndoX([a]);
   const old=ws[a]||{};let e,cell;
   const tt=text.trim();
   if(text===''){e={k:'e'};cell=old.s?{t:'z',s:old.s}:null}
@@ -913,6 +971,7 @@ function setCell(r,c,text){
   const rg=ws['!ref']?U.decode_range(ws['!ref']):{s:{r,c},e:{r,c}};
   if(text!==''){rg.s.r=Math.min(rg.s.r,r);rg.s.c=Math.min(rg.s.c,c);rg.e.r=Math.max(rg.e.r,r);rg.e.c=Math.max(rg.e.c,c);ws['!ref']=U.encode_range(rg)}
   (doc.edits[name]=doc.edits[name]||{})[a]=e;
+  if(batch)return;
   recalc(ws);
   refreshCells(ws);
   markDirty();
@@ -1032,21 +1091,26 @@ async function buildSheetFile(){
   let name=doc.rec.name;if(ext==='xls')name=name.replace(/\.xls$/i,'.xlsx');
   if(!doc.patch){const out=XLSX.write(doc.wb,{bookType:'xlsx',type:'array'});return{bytes:out,name}}
   const zip=doc.zip;
-  for(const sn in doc.edits){
+  const dirtySheets=new Set([...Object.keys(doc.edits),...Object.keys(doc.fmt||{}),...Object.keys(doc.mergeDirty||{})]);
+  const xfCache={};let styTouched=false;
+  for(const sn of dirtySheets){
     const path=doc.map[sn];if(!path||!zip.file(path))continue;
     const dom=parseXml(await zip.file(path).async('string'));
     const sd=dom.getElementsByTagNameNS(XNS,'sheetData')[0];if(!sd)continue;
-    const ws=doc.wb.Sheets[sn];
+    const ws=doc.wb.Sheets[sn],E=doc.edits[sn]||{},F=(doc.fmt&&doc.fmt[sn])||{},SI=doc.sidx[sn]||(doc.sidx[sn]={});
     const rowIdx={};for(const r of kids(sd,'row'))rowIdx[r.getAttribute('r')]=r;
-    for(const a in doc.edits[sn]){
-      const e=doc.edits[sn][a];const {r,c}=XLSX.utils.decode_cell(a);const rn=String(r+1);
+    for(const a of new Set([...Object.keys(E),...Object.keys(F)])){
+      const e=E[a],fo=doc.sty?F[a]:null;const {r,c}=XLSX.utils.decode_cell(a);const rn=String(r+1);
+      const empty=(!e||e.k==='e')&&!fo;
       let row=rowIdx[rn];
-      if(!row){if(e.k==='e')continue;row=dom.createElementNS(XNS,'row');row.setAttribute('r',rn);
+      if(!row){if(empty)continue;row=dom.createElementNS(XNS,'row');row.setAttribute('r',rn);
         let after=null;for(const x of kids(sd,'row'))if(+x.getAttribute('r')>r+1){after=x;break}
         sd.insertBefore(row,after);rowIdx[rn]=row}
       let ce=null,next=null;
       for(const x of kids(row,'c')){const xc=XLSX.utils.decode_cell(x.getAttribute('r')).c;if(xc===c){ce=x;break}if(xc>c){next=x;break}}
-      if(!ce){if(e.k==='e')continue;ce=dom.createElementNS(XNS,'c');ce.setAttribute('r',a);row.insertBefore(ce,next)}
+      if(!ce){if(empty)continue;ce=dom.createElementNS(XNS,'c');ce.setAttribute('r',a);row.insertBefore(ce,next)}
+      if(fo){const base=SI[a]!=null?SI[a]:(+ce.getAttribute('s')||0),ns=xfFor(doc.sty,base,fo,xfCache);if(ns)ce.setAttribute('s',ns);else ce.removeAttribute('s');SI[a]=ns;styTouched=true}
+      if(!e)continue;
       const fe=kid(ce,'f');
       if(fe&&fe.getAttribute('t')==='shared'&&fe.hasAttribute('ref'))unshare(dom,fe.getAttribute('si'),ws);
       for(const n of ['f','v','is'])for(const x of kids(ce,n))ce.removeChild(x);
@@ -1058,9 +1122,18 @@ async function buildSheetFile(){
       else if(e.k==='f'){add('f',e.v);const cv=ws[a];if(cv&&cv.t==='n'&&typeof cv.v==='number'&&isFinite(cv.v))add('v',String(cv.v));else if(cv&&cv.t==='s'){ce.setAttribute('t','str');add('v',cv.v)}}
       else if(e.k==='e'&&!ce.hasAttribute('s'))row.removeChild(ce);
     }
+    if(doc.mergeDirty&&doc.mergeDirty[sn]){
+      for(const m of [...dom.documentElement.children])if(m.localName==='mergeCells')dom.documentElement.removeChild(m);
+      const ms=ws['!merges']||[];
+      if(ms.length){const mc=dom.createElementNS(XNS,'mergeCells');mc.setAttribute('count',ms.length);for(const m of ms){const x=dom.createElementNS(XNS,'mergeCell');x.setAttribute('ref',XLSX.utils.encode_range(m));mc.appendChild(x)}
+        let after=null;for(const x of dom.documentElement.children)if(['sheetData','sheetCalcPr','sheetProtection','protectedRanges','scenarios','autoFilter','sortState','dataConsolidate','customSheetViews'].includes(x.localName))after=x;
+        dom.documentElement.insertBefore(mc,after?after.nextSibling:null)}
+    }
     const dim=dom.getElementsByTagNameNS(XNS,'dimension')[0];if(dim&&ws['!ref'])dim.setAttribute('ref',ws['!ref']);
     zip.file(path,serXml(dom));
   }
+  if(styTouched){zip.file('xl/styles.xml',serXml(doc.sty.dom));parseStyles(doc.sty)}
+  doc.fmt={};doc.mergeDirty={};
   // 열 때 다시 계산하도록 표시하고 계산 순서 파일 제거
   const wbx=parseXml(await zip.file('xl/workbook.xml').async('string'));
   let calc=wbx.getElementsByTagNameNS(XNS,'calcPr')[0];
@@ -1087,6 +1160,196 @@ function unshare(dom,si,ws){
     if(c&&c.f)f.textContent=c.f;
   }
 }
+
+/* ---------- 엑셀 서식 ---------- */
+async function loadStyles(zip){
+  const f=zip.file('xl/styles.xml');if(!f)return null;
+  const st={dom:parseXml(await f.async('string')),theme:[]};
+  const tf=zip.file('xl/theme/theme1.xml');
+  if(tf){const cs=parseXml(await tf.async('string')).getElementsByTagNameNS(ANS,'clrScheme')[0];if(cs){const m={};for(const c of cs.children){const x=c.firstElementChild;if(x)m[c.localName]=x.localName==='sysClr'?(x.getAttribute('lastClr')||'000000'):x.getAttribute('val')}for(const k of ['lt1','dk1','lt2','dk2','accent1','accent2','accent3','accent4','accent5','accent6','hlink','folHlink'])st.theme.push(m[k]||'000000')}}
+  parseStyles(st);return st.xfs.length?st:null;
+}
+const IDX_COL={0:'000000',1:'FFFFFF',2:'FF0000',3:'00FF00',4:'0000FF',5:'FFFF00',6:'FF00FF',7:'00FFFF',8:'000000',9:'FFFFFF',10:'FF0000',11:'00FF00',12:'0000FF',13:'FFFF00',14:'FF00FF',15:'00FFFF',16:'800000',17:'008000',18:'000080',19:'808000',20:'800080',21:'008080',22:'C0C0C0',23:'808080'};
+function xCol(st,e){
+  if(!e)return null;let h=null;
+  if(e.getAttribute('rgb'))h=e.getAttribute('rgb').slice(-6);
+  else if(e.hasAttribute('theme'))h=st.theme[+e.getAttribute('theme')]||null;
+  else if(e.hasAttribute('indexed'))h=IDX_COL[+e.getAttribute('indexed')]||null;
+  if(!h)return null;const t=+e.getAttribute('tint')||0;
+  if(t){const c=hex2rgb(h).map(v=>Math.round(t<0?v*(1+t):v+(255-v)*t));h=c.map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('')}
+  return h.toUpperCase();
+}
+function parseStyles(st){
+  const root=st.dom.documentElement,on=(p,n)=>{const x=kid(p,n);return !!x&&x.getAttribute('val')!=='0'&&x.getAttribute('val')!=='false'};
+  const fonts=kids(kid(root,'fonts'),'font').map(f=>({b:on(f,'b'),i:on(f,'i'),s:on(f,'strike'),u:!!kid(f,'u')&&kid(f,'u').getAttribute('val')!=='none',sz:+(kid(f,'sz')&&kid(f,'sz').getAttribute('val'))||11,color:xCol(st,kid(f,'color'))}));
+  const fills=kids(kid(root,'fills'),'fill').map(f=>{const p=kid(f,'patternFill');if(!p||!p.getAttribute('patternType')||p.getAttribute('patternType')==='none')return null;return xCol(st,kid(p,'fgColor'))||(p.getAttribute('patternType')==='solid'?'000000':'D9D9D9')});
+  const side=e=>{if(!e||!e.getAttribute('style')||e.getAttribute('style')==='none')return null;return{w:/medium|thick|double/.test(e.getAttribute('style'))?2:1,color:xCol(st,kid(e,'color'))||'000000'}};
+  const borders=kids(kid(root,'borders'),'border').map(b=>({l:side(kid(b,'left')||kid(b,'start')),r:side(kid(b,'right')||kid(b,'end')),t:side(kid(b,'top')),b:side(kid(b,'bottom'))}));
+  st.xfs=kids(kid(root,'cellXfs'),'xf').map(x=>{const f=fonts[+x.getAttribute('fontId')||0]||{},al=kid(x,'alignment');
+    return{b:f.b,i:f.i,s:f.s,u:f.u,sz:f.sz,color:f.color,fill:fills[+x.getAttribute('fillId')||0]||null,border:borders[+x.getAttribute('borderId')||0]||{},h:al&&al.getAttribute('horizontal')||'',v:al&&al.getAttribute('vertical')||'',wrap:!!al&&al.getAttribute('wrapText')==='1'}});
+}
+function effSty(sn,a){
+  const st=doc.sty;let o={border:{}};
+  if(st){const x=st.xfs[(doc.sidx[sn]||{})[a]||0]||st.xfs[0];if(x)o={...x,border:{...x.border}}}
+  const f=doc.fmt[sn]&&doc.fmt[sn][a];if(f)o={...o,...f,border:{...o.border,...(f.border||{})}};
+  return o;
+}
+function cellCss(o){
+  const p=[];if(o.fill)p.push('background:#'+o.fill);if(o.color)p.push('color:#'+o.color);else if(o.fill)p.push('color:#111');
+  if(o.b)p.push('font-weight:700');if(o.i)p.push('font-style:italic');const d=[];if(o.s)d.push('line-through');if(o.u)d.push('underline');if(d.length)p.push('text-decoration:'+d.join(' '));
+  if(o.sz&&o.sz!==11)p.push('font-size:'+Math.round(o.sz/11*13)+'px');
+  if(o.h)p.push('text-align:'+({center:'center',centerContinuous:'center',right:'right',left:'left',justify:'justify'}[o.h]||'left'));
+  if(o.v)p.push('vertical-align:'+({top:'top',center:'middle',bottom:'bottom'}[o.v]||'bottom'));
+  if(o.wrap)p.push('white-space:normal;word-break:break-all');
+  const B=o.border||{};if(B.r)p.push(`border-right:${B.r.w}px solid #${B.r.color}`);if(B.b)p.push(`border-bottom:${B.b.w}px solid #${B.b.color}`);
+  const sh=[];if(B.l)sh.push(`inset ${B.l.w}px 0 0 #${B.l.color}`);if(B.t)sh.push(`inset 0 ${B.t.w}px 0 #${B.t.color}`);if(sh.length)p.push('box-shadow:'+sh.join(','));
+  return p.join(';');
+}
+const NF_BUILTIN={'General':0,'0':1,'0.00':2,'#,##0':3,'#,##0.00':4,'0%':9,'0.00%':10};
+function xfFor(st,base,ov,cache){
+  const key=base+'|'+JSON.stringify(ov);if(cache[key]!=null)return cache[key];
+  if(!Object.keys(ov).length)return cache[key]=base;
+  const D=st.dom,root=D.documentElement,mk=n=>D.createElementNS(XNS,n),cx=kid(root,'cellXfs'),xfl=kids(cx,'xf'),xf=(xfl[base]||xfl[0]).cloneNode(true);
+  const push=(listName,node)=>{const L=kid(root,listName);L.appendChild(node);const n=L.children.length;L.setAttribute('count',n);return n-1};
+  if(['b','i','s','sz','color'].some(k=>k in ov)){
+    const f=(kids(kid(root,'fonts'),'font')[+xf.getAttribute('fontId')||0]||kid(kid(root,'fonts'),'font')).cloneNode(true);
+    const tog=(n,v)=>{for(const x of kids(f,n))f.removeChild(x);if(v)f.insertBefore(mk(n),f.firstChild)};
+    if('b' in ov)tog('b',ov.b);if('i' in ov)tog('i',ov.i);if('s' in ov)tog('strike',ov.s);
+    if('sz' in ov){for(const x of kids(f,'sz'))f.removeChild(x);const z=mk('sz');z.setAttribute('val',ov.sz);f.appendChild(z)}
+    if('color' in ov){for(const x of kids(f,'color'))f.removeChild(x);if(ov.color){const c=mk('color');c.setAttribute('rgb','FF'+ov.color);f.appendChild(c)}}
+    xf.setAttribute('fontId',push('fonts',f));xf.setAttribute('applyFont','1');
+  }
+  if('fill' in ov){
+    if(!ov.fill)xf.setAttribute('fillId','0');
+    else{const f=mk('fill'),pf=mk('patternFill'),fg=mk('fgColor'),bg=mk('bgColor');pf.setAttribute('patternType','solid');fg.setAttribute('rgb','FF'+ov.fill);bg.setAttribute('indexed','64');pf.appendChild(fg);pf.appendChild(bg);f.appendChild(pf);xf.setAttribute('fillId',push('fills',f))}
+    xf.setAttribute('applyFill','1');
+  }
+  if(ov.border){
+    const b=(kids(kid(root,'borders'),'border')[+xf.getAttribute('borderId')||0]||kid(kid(root,'borders'),'border')).cloneNode(true),ORD=['left','right','top','bottom','diagonal'];
+    for(const [k,n] of [['l','left'],['r','right'],['t','top'],['b','bottom']]){if(!(k in ov.border))continue;let e=kid(b,n);
+      if(!e){e=mk(n);let before=null;for(const x of b.children)if(ORD.indexOf(x.localName)>ORD.indexOf(n)){before=x;break}b.insertBefore(e,before)}
+      while(e.firstChild)e.removeChild(e.firstChild);const v=ov.border[k];
+      if(v){e.setAttribute('style',v.w>1?'medium':'thin');const c=mk('color');c.setAttribute('rgb','FF'+v.color);e.appendChild(c)}else e.removeAttribute('style')}
+    xf.setAttribute('borderId',push('borders',b));xf.setAttribute('applyBorder','1');
+  }
+  if(ov.nf!=null){
+    let id=NF_BUILTIN[ov.nf];
+    if(id==null){let nfs=kid(root,'numFmts');if(!nfs){nfs=mk('numFmts');root.insertBefore(nfs,root.firstChild)}
+      let mx=163;for(const n of kids(nfs,'numFmt')){mx=Math.max(mx,+n.getAttribute('numFmtId'));if(n.getAttribute('formatCode')===ov.nf)id=+n.getAttribute('numFmtId')}
+      if(id==null){id=mx+1;const n=mk('numFmt');n.setAttribute('numFmtId',id);n.setAttribute('formatCode',ov.nf);nfs.appendChild(n);nfs.setAttribute('count',nfs.children.length)}}
+    xf.setAttribute('numFmtId',id);xf.setAttribute('applyNumberFormat','1');
+  }
+  if(['h','v','wrap'].some(k=>k in ov)){
+    let al=kid(xf,'alignment');if(!al){al=mk('alignment');xf.insertBefore(al,xf.firstChild)}
+    if('h' in ov){if(ov.h)al.setAttribute('horizontal',ov.h);else al.removeAttribute('horizontal')}
+    if('v' in ov){if(ov.v)al.setAttribute('vertical',ov.v);else al.removeAttribute('vertical')}
+    if('wrap' in ov){if(ov.wrap)al.setAttribute('wrapText','1');else al.removeAttribute('wrapText')}
+    xf.setAttribute('applyAlignment','1');
+  }
+  cx.appendChild(xf);cx.setAttribute('count',cx.children.length);return cache[key]=cx.children.length-1;
+}
+/* ---------- 범위 · 실행 취소 · 서식 적용 ---------- */
+const curSN=()=>doc.wb.SheetNames[doc.si];
+function rangeCells(){const g=doc.rng||{r1:doc.sel.r,c1:doc.sel.c,r2:doc.sel.r,c2:doc.sel.c},o=[];if((g.r2-g.r1+1)*(g.c2-g.c1+1)>20000){toast('범위가 너무 커요. 2만 칸 이하로 골라 주세요');return o}for(let r=g.r1;r<=g.r2;r++)for(let c=g.c1;c<=g.c2;c++)o.push({r,c,a:XLSX.utils.encode_cell({r,c})});return o}
+function pushUndoX(addrs){
+  const sn=curSN(),ws=curWs(),F=doc.fmt[sn]||{},SI=doc.sidx[sn]||{};
+  doc.undo.push({sn,ref:ws['!ref'],merges:JSON.stringify(ws['!merges']||[]),cells:addrs.map(a=>({a,cell:ws[a]?{...ws[a]}:null,fmt:F[a]?JSON.stringify(F[a]):null,s:SI[a]}))});
+  if(doc.undo.length>80)doc.undo.shift();doc.redo=[];sheetBar();
+}
+function editOf(c){if(!c||c.t==='z'||c.v==null&&!c.f)return{k:'e'};if(c.f)return{k:'f',v:c.f};if(c.t==='n')return{k:'n',v:c.v};if(c.t==='b')return{k:'b',v:c.v};return{k:'s',v:String(c.v)}}
+function undoX(re){
+  const from=re?doc.redo:doc.undo,to=re?doc.undo:doc.redo,u=from.pop();if(!u){toast(re?'다시 실행할 작업이 없어요':'되돌릴 작업이 없어요');return}
+  const sn=u.sn,ws=doc.wb.Sheets[sn],F=doc.fmt[sn]||(doc.fmt[sn]={}),SI=doc.sidx[sn]||(doc.sidx[sn]={}),E=doc.edits[sn]||(doc.edits[sn]={});
+  to.push({sn,ref:ws['!ref'],merges:JSON.stringify(ws['!merges']||[]),cells:u.cells.map(x=>({a:x.a,cell:ws[x.a]?{...ws[x.a]}:null,fmt:F[x.a]?JSON.stringify(F[x.a]):null,s:SI[x.a]}))});
+  for(const x of u.cells){if(x.cell)ws[x.a]=x.cell;else delete ws[x.a];E[x.a]=editOf(x.cell);if(x.s==null)delete SI[x.a];else SI[x.a]=x.s;F[x.a]=x.fmt?JSON.parse(x.fmt):{}}
+  if(JSON.stringify(ws['!merges']||[])!==u.merges){ws['!merges']=JSON.parse(u.merges);doc.mergeDirty[sn]=true}
+  ws['!ref']=u.ref;if(doc.wb.SheetNames[doc.si]!==sn)doc.si=doc.wb.SheetNames.indexOf(sn);
+  recalc(ws);const s=doc.sel,g=doc.rng;renderTabs();renderGrid();selectCell(s.r,s.c,true);if(g){doc.rng=g;paintRange()}markDirty();sheetBar();
+}
+function redrawKeep(){const s=doc.sel,g=doc.rng,w=$('#gridWrap'),t=w.scrollTop,l=w.scrollLeft;renderGrid();selectCell(s.r,s.c,true);if(g){doc.rng=g;paintRange()}w.scrollTop=t;w.scrollLeft=l}
+function applyFmt(make){
+  if(!doc.sty){toast('서식은 .xlsx 파일에서만 바꿀 수 있어요');return}
+  const cells=rangeCells();if(!cells.length)return;const sn=curSN(),F=doc.fmt[sn]||(doc.fmt[sn]={}),ws=curWs();
+  pushUndoX(cells.map(x=>x.a));
+  for(const x of cells){const ov=make(x);if(!ov)continue;const cur=F[x.a]||{};F[x.a]={...cur,...ov,...(ov.border?{border:{...(cur.border||{}),...ov.border}}:{})};
+    if(ov.nf!=null&&ws[x.a]){ws[x.a].z=ov.nf;if(ws[x.a].t==='n')ws[x.a].w=fmtNum(ws[x.a].v,ov.nf)}}
+  redrawKeep();markDirty();
+}
+function clearRange(){const cells=rangeCells().filter(x=>curWs()[x.a]);if(!cells.length)return;pushUndoX(cells.map(x=>x.a));for(const x of cells)setCell(x.r,x.c,'',true);recalc(curWs());redrawKeep();markDirty()}
+function decOf(z){const m=/\.(0+)/.exec(z||'');return m?m[1].length:0}
+function withDec(z,n){z=z&&z!=='General'?z:'0';const pct=/%/.test(z),pre=/^("[^"]*"|[₩$€¥])/.exec(z),core=/,/.test(z)?'#,##0':'0';return (pre?pre[0]:'')+core+(n>0?'.'+'0'.repeat(n):'')+(pct?'%':'')}
+function sheetBar(){
+  const b=$('#sheetTools');if(!doc||doc.kind!=='sheet')return;
+  const t=(x,inner,l,c='')=>`<button class="tb ${c}" data-x="${x}" title="${l}" aria-label="${l}">${inner}</button>`,i=n=>ic(n,20),x=s=>`<b class="tx">${s}</b>`,dv='<span class="dv"></span>';
+  b.innerHTML=t('undo',i('undo'),'실행 취소',doc.undo.length?'':'off')+t('redo',i('redo'),'다시 실행',doc.redo.length?'':'off')+dv
+   +t('cur',x('₩'),'통화 형식')+t('pct',x('%'),'백분율')+t('dec-',x('.0'),'소수 자릿수 줄이기')+t('dec+',x('.00'),'소수 자릿수 늘리기')+t('num',x('123'),'천 단위 쉼표 / 일반')+dv
+   +t('sz-',i('minus'),'글자 작게')+t('sz+',i('plus'),'글자 크게')+dv
+   +t('b',i('bold'),'굵게')+t('i',i('italic'),'기울임')+t('s',i('strike'),'취소선')+t('color',i('tcolor'),'글자 색')+t('fill',i('bucket'),'채우기 색')+t('border',i('table'),'테두리')+t('merge',i('merge'),'셀 병합 / 해제')+dv
+   +t('al-left',i('alignl'),'왼쪽 맞춤')+t('al-center',i('alignc'),'가운데 맞춤')+t('al-right',i('alignr'),'오른쪽 맞춤')+t('va-top',i('aT'),'위쪽 맞춤')+t('va-center',i('aM'),'세로 가운데')+t('va-bottom',i('aB'),'아래쪽 맞춤')+t('wrap',i('wrap'),'줄 바꿈')+dv
+   +t('fn',i('sigma'),'함수')+t('rng',i('range'),'범위 선택: 누른 뒤 끝 칸을 누르세요',doc.rngMode?'on':'');
+}
+function xPop(btn,html,cb){
+  const old=$('#xPop');if(old){old.remove();if(old._for===btn)return}
+  const p=el('div','pop');p.id='xPop';p._for=btn;p.innerHTML=html;document.body.appendChild(p);const r=btn.getBoundingClientRect();
+  p.style.left=Math.max(8,Math.min(window.innerWidth-p.offsetWidth-8,r.left))+'px';p.style.top=(r.bottom+6)+'px';
+  p.onclick=e=>{const k=e.target.closest('[data-v]');if(k){p.remove();cb(k.dataset.v)}};
+}
+document.addEventListener('pointerdown',e=>{const p=$('#xPop');if(p&&!e.target.closest('#xPop')&&!e.target.closest('[data-x]'))p.remove()});
+const XSW=['000000','FFFFFF','6B7280','E11D48','F59E0B','FDE68A','16A34A','BBF7D0','1F6FEB','BFDBFE','7C3AED','FBCFE8'];
+const swHtml=none=>`<div class="sws">${none?'<button class="swc none" data-v="" title="없음" aria-label="없음"></button>':''}${XSW.map(c=>`<button class="swc" data-v="${c}" style="background:#${c}" title="#${c}" aria-label="#${c}"></button>`).join('')}</div>`;
+function sheetAct(x,btn){
+  if(!doc||doc.kind!=='sheet')return;commitFx();
+  const sn=curSN(),ws=curWs(),a0=XLSX.utils.encode_cell(doc.sel),e0=effSty(sn,a0),z0=(ws[a0]&&ws[a0].z)||'General';
+  if(x==='undo')return undoX(false);if(x==='redo')return undoX(true);
+  if(x==='rng'){doc.rngMode=!doc.rngMode;sheetBar();if(doc.rngMode)toast('범위의 끝 칸을 누르세요');return}
+  if(x==='b'||x==='i'||x==='s'||x==='wrap'){const v=!e0[x];return applyFmt(()=>({[x]:v}))}
+  if(x==='sz-'||x==='sz+'){const n=Math.max(6,Math.min(72,(e0.sz||11)+(x==='sz+'?1:-1)));return applyFmt(()=>({sz:n}))}
+  if(x.startsWith('al-')){const v=x.slice(3);return applyFmt(()=>({h:e0.h===v?'':v}))}
+  if(x.startsWith('va-')){const v=x.slice(3);return applyFmt(()=>({v}))}
+  if(x==='cur')return applyFmt(()=>({nf:'"₩"#,##0'}));
+  if(x==='pct')return applyFmt(()=>({nf:decOf(z0)?'0.'+'0'.repeat(decOf(z0))+'%':'0%'}));
+  if(x==='num')return applyFmt(()=>({nf:/,/.test(z0)&&!/₩|%/.test(z0)?'General':'#,##0'}));
+  if(x==='dec-'||x==='dec+'){const n=Math.max(0,Math.min(8,decOf(z0)+(x==='dec+'?1:-1)));return applyFmt(()=>({nf:withDec(z0,n)}))}
+  if(x==='color')return xPop(btn,swHtml(false),v=>applyFmt(()=>({color:v})));
+  if(x==='fill')return xPop(btn,swHtml(true),v=>applyFmt(()=>({fill:v||null})));
+  if(x==='border')return xPop(btn,'<button data-v="all">모든 테두리</button><button data-v="outer">바깥쪽 테두리</button><button data-v="none">테두리 없음</button>',v=>{const g=doc.rng,L={w:1,color:'000000'};
+    applyFmt(c=>v==='none'?{border:{l:null,r:null,t:null,b:null}}:v==='all'?{border:{l:L,r:L,t:L,b:L}}:(()=>{const o={};if(c.r===g.r1)o.t=L;if(c.r===g.r2)o.b=L;if(c.c===g.c1)o.l=L;if(c.c===g.c2)o.r=L;return Object.keys(o).length?{border:o}:null})())});
+  if(x==='merge'){const g=doc.rng,ms=ws['!merges']||(ws['!merges']=[]),hit=m=>!(m.e.r<g.r1||m.s.r>g.r2||m.e.c<g.c1||m.s.c>g.c2),over=ms.filter(hit),single=g.r1===g.r2&&g.c1===g.c2;
+    if(single&&!over.length){toast('병합할 범위를 먼저 골라 주세요 (범위 선택 버튼 또는 드래그)');return}
+    pushUndoX([a0]);ws['!merges']=ms.filter(m=>!hit(m));
+    const same=over.length===1&&over[0].s.r===g.r1&&over[0].s.c===g.c1&&over[0].e.r===g.r2&&over[0].e.c===g.c2;
+    if(!single&&!same)ws['!merges'].push({s:{r:g.r1,c:g.c1},e:{r:g.r2,c:g.c2}});
+    doc.mergeDirty[sn]=true;redrawKeep();markDirty();return}
+  if(x==='fn')return xPop(btn,[['SUM','합계'],['AVERAGE','평균'],['COUNT','개수'],['MAX','최댓값'],['MIN','최솟값']].map(f=>`<button data-v="${f[0]}">${f[1]} (${f[0]})</button>`).join(''),fn=>{
+    const U=XLSX.utils,g=doc.rng;let tr,tc,ref;
+    if(g.r1!==g.r2||g.c1!==g.c2){tr=g.r2+1;tc=g.c1;ref=U.encode_range({s:{r:g.r1,c:g.c1},e:{r:g.r2,c:g.c2}})}
+    else{tr=g.r1;tc=g.c1;let r=tr-1;while(r>=0&&ws[U.encode_cell({r,c:tc})]&&ws[U.encode_cell({r,c:tc})].t==='n')r--;
+      if(r<tr-1)ref=U.encode_range({s:{r:r+1,c:tc},e:{r:tr-1,c:tc}});
+      else{let c=tc-1;while(c>=0&&ws[U.encode_cell({r:tr,c})]&&ws[U.encode_cell({r:tr,c})].t==='n')c--;if(c<tc-1)ref=U.encode_range({s:{r:tr,c:c+1},e:{r:tr,c:tc-1}})}}
+    if(!ref){selectCell(tr,tc);fxIn.value='='+fn+'(';fxIn.focus();return}
+    if(tr>=doc.nR)doc.rowLimit=tr+50;selectCell(tr,tc,true);setCell(tr,tc,'='+fn+'('+ref+')');redrawKeep()});
+}
+$('#sheetTools').onclick=e=>{const b=e.target.closest('[data-x]');if(b)sheetAct(b.dataset.x,b)};
+/* 복사 · 붙여넣기 (다른 앱과 탭으로 구분된 글자로 주고받음) */
+let xClip=null;
+const sheetFocus=()=>doc&&doc.kind==='sheet'&&!$('#scrim').classList.contains('on')&&!/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+function copyRange(e,cutIt){
+  if(!sheetFocus())return;const ws=curWs(),g=doc.rng,rows=[],raw=[];
+  for(let r=g.r1;r<=g.r2;r++){const a=[],b=[];for(let c=g.c1;c<=g.c2;c++){const cell=ws[XLSX.utils.encode_cell({r,c})];a.push(cellText(cell).replace(/[\t\n]/g,' '));b.push(cell?(cell.f?'='+cell.f:cell.v==null?'':String(cell.v)):'')}rows.push(a.join('\t'));raw.push(b)}
+  const tsv=rows.join('\n');e.clipboardData.setData('text/plain',tsv);e.preventDefault();xClip={tsv,raw};
+  if(cutIt)clearRange();else toast('복사했어요');
+}
+document.addEventListener('copy',e=>copyRange(e,false));
+document.addEventListener('cut',e=>copyRange(e,true));
+document.addEventListener('paste',e=>{
+  if(!sheetFocus())return;const text=(e.clipboardData.getData('text/plain')||'').replace(/\r/g,'');if(!text)return;e.preventDefault();
+  const rows=xClip&&xClip.tsv===text?xClip.raw:text.replace(/\n$/,'').split('\n').map(l=>l.split('\t'));
+  const s=doc.sel,addrs=[];rows.forEach((row,i)=>row.forEach((v,j)=>addrs.push(XLSX.utils.encode_cell({r:s.r+i,c:s.c+j}))));
+  if(addrs.length>20000){toast('붙여넣을 내용이 너무 많아요');return}
+  pushUndoX(addrs);rows.forEach((row,i)=>row.forEach((v,j)=>setCell(s.r+i,s.c+j,String(v),true)));
+  recalc(curWs());if(s.r+rows.length>doc.nR)doc.rowLimit=s.r+rows.length+30;
+  renderGrid();selectCell(s.r,s.c,true);extendTo(s.r+rows.length-1,s.c+Math.max(...rows.map(r=>r.length))-1);markDirty();
+});
 
 $('#newSheet').onclick=()=>{
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[]]),'Sheet1');
@@ -1327,6 +1590,7 @@ function drawSp(e,d,ctx,x){
   if(tb){
     const fontRef=st&&kid(st,'fontRef');const fc=fontRef?colorFrom(fontRef,ctx):null;
     d.appendChild(drawText(tb,ctx,c,fc,!!pr&&pr!=='rect'&&!c.ph));
+    if(c.ph&&ctx.editable&&!readTb(tb).trim())d.classList.add('phe');
   }
 }
 function drawFrame(e,d,ctx,x){
@@ -1449,7 +1713,7 @@ slidesBox.addEventListener('pointerdown',e=>{
   const hd=e.target.closest('.hd'),d=e.target.closest('.shp.ed');
   if(!d){if(doc.sel){clearSel();updateDeckTools()}return}
   const i=+sw.dataset.i,k=+d.dataset.k;let fresh=false;
-  if(!(doc.sel&&doc.sel.i===i&&doc.sel.k===k)){selectShape(i,k,d);fresh=true;if(e.pointerType==='touch'){drag={first:true};return}}
+  if(!(doc.sel&&doc.sel.i===i&&doc.sel.k===k)){if(doc.painter){const pt=doc.painter;doc.painter=null;applyPaint(pt,i,k);selectEl(i,doc.slides[i].shapes[k]);return}selectShape(i,k,d);fresh=true;if(e.pointerType==='touch'){drag={first:true};return}}
   e.preventDefault();try{d.setPointerCapture(e.pointerId)}catch(_){}
   drag={d,i,k,fresh,h:hd?hd.dataset.h:null,ratio:doc.slides[i].shapes[k].localName==='pic',sx:e.clientX,sy:e.clientY,l:parseFloat(d.style.left),t:parseFloat(d.style.top),w:parseFloat(d.style.width),hh:parseFloat(d.style.height),moved:false};
 });
@@ -1550,8 +1814,8 @@ function updateDeckTools(){
   const tb=(a,i,l,c='')=>`<button class="tb ${c}" data-t="${a}" title="${l}" aria-label="${l}">${i[0]==='<'?i:ic(i,22)}<span>${l}</span></button>`;
   const dv='<span class="dv"></span>';
   let h=tb('tool:sel','pointer','선택 (V)',tool==='sel'?'on':'');
-  h+=tb('tool:text','type','글상자 (T)',tool==='text'?'on':'')+tb('shapes',shapeIcon(lastK),st?st.n:'도형','has'+(st?' on':''))+tb('tool:pen','pen','펜 (P)',tool==='pen'?'on':'')+`<label class="tb" title="이미지">${ic('image',22)}<span>이미지</span><input type="file" class="file-hit img-in" accept="image/png,image/jpeg,image/gif" aria-label="이미지 넣기"></label>`+tb('addTable','table','표');
-  if(doc.sel)h+=dv+tb('edit','pencil','글자 고치기')+tb('copy','copy','복사')+tb('delS','trash','삭제');
+  h+=tb('tool:text','type','글상자 (T)',tool==='text'?'on':'')+tb('shapes',shapeIcon(lastK),st?st.n:'도형','has'+(st?' on':''))+tb('tool:pen','pen','펜 (P)',tool==='pen'?'on':'')+`<label class="tb" title="이미지">${ic('image',22)}<span>이미지</span><input type="file" class="file-hit img-in" accept="image/png,image/jpeg,image/gif" aria-label="이미지 넣기"></label>`+tb('addTable','table','표')+tb('find','search','찾기 · 바꾸기');
+  if(doc.sel)h+=dv+tb('edit','pencil','글자 고치기')+tb('cut','cut','잘라내기')+tb('copy','copy','복사')+tb('paint','brush','서식 복사',doc.painter?'on':'')+tb('delS','trash','삭제');
   else if(clip)h+=dv+tb('paste','addslide','붙여넣기');
   h+=dv+tb('undo','undo','실행 취소',doc.undo.length?'':'off')+tb('redo','redo','다시 실행',doc.redo.length?'':'off');
   h+='<span class="sp"></span>'+`<button class="tb go" data-t="play" title="발표" aria-label="발표">${ic('play',16)}<span>발표</span></button>`;
@@ -1588,6 +1852,9 @@ async function deckAct(t){
   if(!doc||doc.kind!=='deck')return;
   if(t.startsWith('tool:')){const k=t.slice(5);if(SHAPES[k])doc.lastShape=k;if(k==='sel'&&doc.tool==='sel'&&doc.sel){clearSel();updateDeckTools();return}setTool(k);return}
   if(t==='copy'){copySel(false);updateDeckTools();return}
+  if(t==='cut'){copySel(true);return}
+  if(t==='find'){findReplace();return}
+  if(t==='paint'){if(doc.painter){doc.painter=null;updateDeckTools()}else startPaint();return}
   if(t==='paste'){await pasteClip();return}
   if(t==='desel'){clearSel();updateDeckTools()}
   else if(t==='props'){doc.showProps=!doc.showProps;renderProps()}
@@ -1609,7 +1876,7 @@ async function deckAct(t){
   else if(t==='addT')addTextBox(doc.cur);
   else if(t==='addR')addShape(doc.cur,'rect');
   else if(t==='addO')addShape(doc.cur,'ellipse');
-  else if(t==='addSl')await insertSlide(doc.cur,false);
+  else if(t==='addSl')await chooseLayout();
   else if(t==='dupSl')await insertSlide(doc.cur,true);
   else if(t==='up'||t==='down')moveSlide(doc.cur,t==='up'?-1:1);
   else if(t==='delSl'){if(doc.slides.length<2){toast('슬라이드가 하나뿐이라 지울 수 없어요');return}if(await ask(`${doc.cur+1}번 슬라이드를 지울까요?`,'내려받기 전까지는 원본 파일이 바뀌지 않아요.','지우기',true))deleteSlide(doc.cur)}
@@ -1784,7 +2051,7 @@ function renderProps(){
   const act=(k,i,l)=>`<button class="pact" data-p="${k}" data-v="">${ic(i,16)}${l}</button>`;
   const num=(k,l,v)=>`<label class="pn"><span>${l}</span><input type="number" inputmode="decimal" data-p="${k}" value="${v}"></label>`;
   const sh=doc.sel&&doc.slides[doc.sel.i].shapes[doc.sel.k];
-  if(!sh){p.innerHTML=head('디자인',`슬라이드 ${doc.cur+1} / ${doc.slides.length}`)+`<div class="pg"><h4>배경</h4>${colorRow('slBg',false,'')}</div><div class="pg"><h4>슬라이드</h4><div class="pas">${act('slAdd','addslide','새 슬라이드')}${act('slDup','copy','복제')}${act('slUp','up','앞으로')}${act('slDown','down','뒤로')}${act('slDel','trash','삭제')}</div></div><div class="pg m-only"><h4>레이어</h4><div>${layersHtml()}</div></div><div class="pg w-only"><h4>단축키</h4><p>V 선택 · T 글상자 · R 사각형 · O 원 · L 선 · P 펜<br>Ctrl+C 복사 · Ctrl+X 잘라내기 · Ctrl+V 붙여넣기<br>Ctrl+D 복제 · Delete 삭제 · Ctrl+S 저장<br>Ctrl+Z 실행 취소 · Ctrl+Shift+Z 다시 실행<br>Ctrl+B/I/U 굵게·기울임·밑줄<br>Ctrl+] 앞으로 · Ctrl+[ 뒤로 (Shift: 맨 앞·맨 뒤)<br>방향키 1px 이동 · Shift+방향키 10px<br>선택이 없을 때: ↑↓ 슬라이드 이동, Ctrl+C/V 슬라이드 복사<br>Enter 글자 고치기 · Esc 선택 해제</p></div>`;return}
+  if(!sh){p.innerHTML=head('디자인',`슬라이드 ${doc.cur+1} / ${doc.slides.length}`)+`<div class="pg"><h4>배경</h4>${colorRow('slBg',false,'')}</div><div class="pg"><h4>슬라이드</h4><div class="pas">${act('slAdd','addslide','새 슬라이드')}${act('slDup','copy','복제')}${act('slUp','up','앞으로')}${act('slDown','down','뒤로')}${act('slDel','trash','삭제')}</div></div><div class="pg m-only"><h4>레이어</h4><div>${layersHtml()}</div></div><div class="pg w-only"><h4>단축키</h4><p>V 선택 · T 글상자 · R 사각형 · O 원 · L 선 · P 펜<br>Ctrl+C 복사 · Ctrl+X 잘라내기 · Ctrl+V 붙여넣기<br>Ctrl+D 복제 · Delete 삭제 · Ctrl+S 저장 · Ctrl+F 찾기<br>Ctrl+Z 실행 취소 · Ctrl+Shift+Z 다시 실행<br>Ctrl+B/I/U 굵게·기울임·밑줄<br>Ctrl+] 앞으로 · Ctrl+[ 뒤로 (Shift: 맨 앞·맨 뒤)<br>방향키 1px 이동 · Shift+방향키 10px<br>선택이 없을 때: ↑↓ 슬라이드 이동, Ctrl+C/V 슬라이드 복사<br>Enter 글자 고치기 · Esc 선택 해제</p></div>`;return}
   const S=doc.slides[doc.sel.i],x=resolvedXfrm(sh,S)||{x:0,y:0,cx:0,cy:0,rot:0},px=v=>Math.round(v/9525),isSp=sh.localName==='sp',isLn=sh.localName==='cxnSp',isPic=sh.localName==='pic';
   let h=head('디자인',{sp:'도형 · 글상자',pic:'그림',graphicFrame:'표',cxnSp:'선'}[sh.localName]||'개체');
   h+=`<div class="pg"><h4>위치</h4><div class="prow"><div class="seg">${sg('aL','','aL','왼쪽 맞춤')}${sg('aC','','aC','가로 가운데')}${sg('aR','','aR','오른쪽 맞춤')}</div><div class="seg">${sg('aT','','aT','위쪽 맞춤')}${sg('aM','','aM','세로 가운데')}${sg('aB','','aB','아래쪽 맞춤')}</div></div><div class="pgrid">${num('x','X',px(x.x))}${num('y','Y',px(x.y))}</div><div class="prow">${num('rot','회전°',Math.round((x.rot||0)/60000))}<div class="pbs">${bt('flipH','','flipH','좌우 뒤집기',x.flipH)}${bt('flipV','','flipV','상하 뒤집기',x.flipV)}</div></div></div>`;
@@ -1794,8 +2061,8 @@ function renderProps(){
   if(isSp||isLn){const d=getDash(sh);h+=`<div class="pg"><h4>테두리</h4>${colorRow('ln',true,hexOf(kid(spPrOf(sh),'ln')))}<div class="prow">${num('lw','두께 pt',lineW(sh))}<div class="seg">${sg('dash','solid','실선','실선',d==='solid')}${sg('dash','dash','파선','파선',d==='dash')}${sg('dash','dot','점선','점선',d==='dot')}</div></div></div>`}
   if(isSp||isPic){const v=getShadow(sh);h+=`<div class="pg"><h4>그림자</h4><div class="seg full">${sg('shd','','없음','그림자 없음',!v)}${sg('shd','s','작게','작은 그림자',v==='s')}${sg('shd','m','보통','보통 그림자',v==='m')}${sg('shd','l','크게','큰 그림자',v==='l')}</div></div>`}
   const tbs=textBodies(sh);
-  if(tbs.length){const r=tbs[0].getElementsByTagNameNS(ANS,'rPr')[0]||tbs[0].getElementsByTagNameNS(ANS,'endParaRPr')[0];const on=n=>!!r&&['1','true','sng'].includes(r.getAttribute(n));const pp=tbs[0].getElementsByTagNameNS(ANS,'pPr')[0],al=pp&&pp.getAttribute('algn'),bp=kid(tbs[0],'bodyPr'),va=bp&&bp.getAttribute('anchor');
-    h+=`<div class="pg"><h4>글자</h4><div class="prow">${num('sz','크기 pt',curPt(tbs[0]))}${num('ls','줄 간격 %',getLs(tbs[0]))}</div><div class="prow"><div class="seg">${sg('b','','bold','굵게',on('b'))}${sg('i','','italic','기울임',on('i'))}${sg('u','','underline','밑줄',on('u'))}</div><div class="seg">${sg('al','l','alignl','왼쪽 정렬',al==='l')}${sg('al','ctr','alignc','가운데 정렬',al==='ctr')}${sg('al','r','alignr','오른쪽 정렬',al==='r')}</div></div>${sh.localName==='sp'?`<div class="seg">${sg('va','t','aT','위쪽',va==='t')}${sg('va','ctr','aM','세로 가운데',va==='ctr')}${sg('va','b','aB','아래쪽',va==='b')}</div>`:''}${colorRow('tc',false,hexOf(r))}</div>`}
+  if(tbs.length){const r=tbs[0].getElementsByTagNameNS(ANS,'rPr')[0]||tbs[0].getElementsByTagNameNS(ANS,'endParaRPr')[0];const on=n=>!!r&&['1','true','sng','sngStrike'].includes(r.getAttribute(n));const pp=tbs[0].getElementsByTagNameNS(ANS,'pPr')[0],al=pp&&pp.getAttribute('algn'),bp=kid(tbs[0],'bodyPr'),va=bp&&bp.getAttribute('anchor'),bu=pp&&kid(pp,'buAutoNum')?'num':pp&&kid(pp,'buChar')?'dot':'none',lat=r&&(kid(r,'ea')||kid(r,'latin')),ffc=lat?lat.getAttribute('typeface')||'':'',fl=FONTS.includes(ffc)?FONTS:[...FONTS,ffc],fontSel=`<label class="pn"><span>글꼴</span><select data-p="ff" aria-label="글꼴">${fl.map(f=>`<option value="${esc(f)}"${f===ffc?' selected':''}>${esc(f)||'기본 글꼴'}</option>`).join('')}</select></label>`;
+    h+=`<div class="pg"><h4>글자</h4><div class="prow">${num('sz','크기 pt',curPt(tbs[0]))}${num('ls','줄 간격 %',getLs(tbs[0]))}</div><div class="prow"><div class="seg">${sg('b','','bold','굵게',on('b'))}${sg('i','','italic','기울임',on('i'))}${sg('u','','underline','밑줄',on('u'))}${sg('st','','strike','취소선',on('strike'))}</div><div class="seg">${sg('al','l','alignl','왼쪽 정렬',al==='l')}${sg('al','ctr','alignc','가운데 정렬',al==='ctr')}${sg('al','r','alignr','오른쪽 정렬',al==='r')}${sg('al','just','alignj','양쪽 정렬',al==='just')}</div></div><div class="prow"><div class="seg">${sg('bu','none','없음','글머리 없음',bu==='none')}${sg('bu','dot','list','글머리 기호',bu==='dot')}${sg('bu','num','listn','번호 매기기',bu==='num')}</div><div class="seg">${sg('lv','-1','outdent','내어쓰기')}${sg('lv','1','indent','들여쓰기')}</div></div>${fontSel}${sh.localName==='sp'?`<div class="seg">${sg('va','t','aT','위쪽',va==='t')}${sg('va','ctr','aM','세로 가운데',va==='ctr')}${sg('va','b','aB','아래쪽',va==='b')}</div>`:''}${colorRow('tc',false,hexOf(r))}</div>`}
   h+=`<div class="pg"><h4>순서</h4><div class="seg full">${sg('front','','맨 앞','맨 앞으로')}${sg('fwd','','앞으로','한 단계 앞으로')}${sg('bwd','','뒤로','한 단계 뒤로')}${sg('back','','맨 뒤','맨 뒤로')}</div><div class="pas">${act('dupS','copy','복제')}${act('delS','trash','삭제')}</div></div>`;
   p.innerHTML=h;
 }
@@ -1818,10 +2085,61 @@ function styleTb(tb,o){
     if(o.b!=null)r.setAttribute('b',o.b?'1':'0');
     if(o.i!=null)r.setAttribute('i',o.i?'1':'0');
     if(o.u!=null)r.setAttribute('u',o.u?'sng':'none');
+    if(o.strike!=null)r.setAttribute('strike',o.strike?'sngStrike':'noStrike');
+    if('ff' in o){for(const n of ['latin','ea'])for(const x of kids(r,n))r.removeChild(x);if(o.ff){let before=null;for(const x of r.children)if(['cs','sym','hlinkClick','hlinkMouseOver','rtl','extLst'].includes(x.localName)){before=x;break}for(const n of ['latin','ea']){const e=D.createElementNS(ANS,'a:'+n);e.setAttribute('typeface',o.ff);r.insertBefore(e,before)}}}
     if(o.color){for(const n of FILLS)for(const f of kids(r,n))r.removeChild(f);const ln=kid(r,'ln');r.insertBefore(mkFill(D,o.color),ln?ln.nextSibling:r.firstChild)}
   }
   if(o.sz){const bp=kid(tb,'bodyPr'),na=bp&&kid(bp,'normAutofit');if(na)na.removeAttribute('fontScale')}
   if(o.al)for(const p of kids(tb,'p')){let pp=kid(p,'pPr');if(!pp){pp=D.createElementNS(ANS,'a:pPr');p.insertBefore(pp,p.firstChild)}pp.setAttribute('algn',o.al)}
+}
+const FONTS=['','맑은 고딕','나눔고딕','나눔명조','굴림','바탕','궁서','Arial','Times New Roman','Georgia','Verdana','Courier New'];
+function setBullet(tb,kind){
+  const D=tb.ownerDocument;
+  for(const p of kids(tb,'p')){let pp=kid(p,'pPr');if(!pp){pp=D.createElementNS(ANS,'a:pPr');p.insertBefore(pp,p.firstChild)}
+    for(const c of [...pp.children])if(/^bu[A-Z]/.test(c.localName))pp.removeChild(c);
+    let before=null;for(const x of pp.children)if(['tabLst','defRPr','extLst'].includes(x.localName)){before=x;break}
+    const add=(n,at)=>{const e=D.createElementNS(ANS,'a:'+n);for(const k in at)e.setAttribute(k,at[k]);pp.insertBefore(e,before)};
+    if(kind==='none'){add('buNone',{});continue}
+    if(!(+pp.getAttribute('marL')>0)){pp.setAttribute('marL',342900*((+pp.getAttribute('lvl')||0)+1));pp.setAttribute('indent','-342900')}
+    add('buFont',{typeface:'Arial'});if(kind==='num')add('buAutoNum',{type:'arabicPeriod'});else add('buChar',{char:'•'})}
+}
+/* 찾기 · 바꾸기 */
+function findReplace(){
+  openSheet((b,close)=>{
+    b.innerHTML=`<h3>찾기 · 바꾸기</h3><input type="text" id="fq" placeholder="찾을 말" aria-label="찾을 말"><input type="text" id="fr" placeholder="바꿀 말 (찾기만 할 때는 비워 두세요)" aria-label="바꿀 말"><p id="fmsg"></p><div class="row end"><button class="btn" data-a="x">닫기</button><button class="btn" data-a="f">찾기</button><button class="btn primary" data-a="r">모두 바꾸기</button></div>`;
+    b.onclick=e=>{const a=e.target.dataset.a;if(!a)return;if(a==='x'){close(null);return}
+      const q=$('#fq',b).value,msg=$('#fmsg',b);if(!q){msg.textContent='찾을 말을 넣어 주세요.';return}
+      const hits=doc.slides.map(s=>[...s.part.dom.getElementsByTagNameNS(ANS,'t')].filter(t=>t.textContent.includes(q))),total=hits.reduce((n,h)=>n+h.length,0);
+      if(!total){msg.textContent=`"${q}"이(가) 들어간 글자가 없어요.`;return}
+      if(a==='f'){let j=doc.cur;for(let n=1;n<=doc.slides.length;n++){const i=(doc.cur+n)%doc.slides.length;if(hits[i].length){j=i;break}}close(null);clearSel();setCur(j);const w=$(`#slides .sw[data-i="${j}"]`);if(w)w.scrollIntoView({block:'center'});toast(`${total}곳에서 찾았어요. ${j+1}번 슬라이드로 왔어요`,3000)}
+      else{const rp=$('#fr',b).value;hits.forEach((h,i)=>{if(!h.length)return;snap(i);for(const t of h)t.textContent=t.textContent.split(q).join(rp)});close(null);renderAllSlides();markDirty();toast(`${total}곳을 바꿨어요`)}};
+  });
+}
+/* 서식 복사 */
+function startPaint(){
+  if(!doc.sel)return;const S=doc.slides[doc.sel.i],sh=S.shapes[doc.sel.k],sp=kid(sh,'spPr'),tbs=textBodies(sh),r=tbs[0]&&(tbs[0].getElementsByTagNameNS(ANS,'rPr')[0]||tbs[0].getElementsByTagNameNS(ANS,'endParaRPr')[0]);
+  const pt={isSp:sh.localName==='sp',nodes:[],txt:null};
+  if(sp&&pt.isSp){const f=FILLS.map(n=>kid(sp,n)).find(Boolean);for(const x of [f,kid(sp,'ln'),kid(sp,'effectLst')])if(x)pt.nodes.push(x.cloneNode(true))}
+  if(r){const lat=kid(r,'ea')||kid(r,'latin');pt.txt={};if(r.getAttribute('sz'))pt.txt.sz=+r.getAttribute('sz')/100;for(const k of ['b','i'])if(r.hasAttribute(k))pt.txt[k]=['1','true'].includes(r.getAttribute(k));if(r.hasAttribute('u'))pt.txt.u=r.getAttribute('u')!=='none';const c=hexOf(r);if(c)pt.txt.color=c;if(lat)pt.txt.ff=lat.getAttribute('typeface')}
+  doc.painter=pt;updateDeckTools();toast('서식을 입힐 개체를 누르세요');
+}
+function applyPaint(pt,i,k){
+  const S=doc.slides[i],sh=S.shapes[k];snap(i);
+  if(pt.isSp&&sh.localName==='sp'&&pt.nodes.length){const sp=kid(sh,'spPr');for(const n of [...FILLS,'ln','effectLst','effectDag'])for(const x of kids(sp,n))sp.removeChild(x);let before=null;for(const x of sp.children)if(['scene3d','sp3d','extLst'].includes(x.localName)){before=x;break}for(const n of pt.nodes)sp.insertBefore(sh.ownerDocument.importNode(n,true),before)}
+  if(pt.txt)for(const t of textBodies(sh))styleTb(t,pt.txt);
+  rerenderSlide(i);markDirty();toast('서식을 입혔어요');
+}
+/* 새 슬라이드: 레이아웃 고르기 */
+async function listLayouts(){
+  const out=[],seen=new Set();
+  for(const s of doc.slides){const m=s.master;if(!m||seen.has(m.path))continue;seen.add(m.path);
+    for(const id in m.rels){const r=m.rels[id];if(!/\/slideLayout$/.test(r.type)||!r.target)continue;const p=await loadPart(r.target);if(!p)continue;const cs=kid(p.dom.documentElement,'cSld');out.push({p,name:(cs&&cs.getAttribute('name'))||'레이아웃'})}}
+  return out;
+}
+async function chooseLayout(){
+  const L=await listLayouts();if(!L.length){await insertSlide(doc.cur,false);return}
+  const pick=await openSheet((b,close)=>{b.innerHTML=`<h3>새 슬라이드</h3><p>레이아웃을 고르세요.</p><button class="new-btn" data-l="-1"><span><b>빈 슬라이드</b><small>지금 슬라이드와 같은 바탕</small></span></button>`+L.map((x,n)=>`<button class="new-btn" data-l="${n}"><span><b>${esc(x.name)}</b></span></button>`).join('')+`<div class="row end"><button class="btn" data-l="x">취소</button></div>`;b.onclick=e=>{const t=e.target.closest('[data-l]');if(t)close(t.dataset.l)}});
+  if(pick==null||pick==='x')return;await insertSlide(doc.cur,false,null,+pick<0?null:L[+pick].p);
 }
 function setSlideBg(S,hex){const D=S.part.dom,cs=kid(D.documentElement,'cSld');for(const b of kids(cs,'bg'))cs.removeChild(b);const x=parseXml(`<p:bg xmlns:p="${PNS}" xmlns:a="${ANS}"><p:bgPr><a:solidFill><a:srgbClr val="${hex}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>`).documentElement;cs.insertBefore(D.importNode(x,true),cs.firstChild)}
 function applyProp(k,v){
@@ -1835,7 +2153,7 @@ function applyProp(k,v){
   if(k==='slBg'){if(!okHex)return;const i=doc.cur;snap(i);setSlideBg(doc.slides[i],hex);rerenderSlide(i);markDirty();return}
   if(!doc.sel)return;const i=doc.sel.i,S=doc.slides[i],sh=S.shapes[doc.sel.k],tbs=textBodies(sh),n=parseFloat(v),x=resolvedXfrm(sh,S);
   const first=tbs[0]&&(tbs[0].getElementsByTagNameNS(ANS,'rPr')[0]||tbs[0].getElementsByTagNameNS(ANS,'endParaRPr')[0]);
-  const on=a=>!!first&&['1','true','sng'].includes(first.getAttribute(a));
+  const on=a=>!!first&&['1','true','sng','sngStrike'].includes(first.getAttribute(a));
   const box=()=>({x:x.x,y:x.y,cx:x.cx,cy:x.cy});
   if(['x','y','w','h','rot'].includes(k)){
     if(!x||!isFinite(n))return;snap(i);const b=box();
@@ -1851,6 +2169,10 @@ function applyProp(k,v){
   else if(k==='rad'){if(!isFinite(n)||!x)return;snap(i);setRadius(sh,x,Math.max(0,n))}
   else if(k==='sz'){if(!isFinite(n)||n<1)return;snap(i);for(const t of tbs)styleTb(t,{sz:Math.min(400,n)})}
   else if(k==='ls'){if(!isFinite(n)||n<50)return;snap(i);for(const t of tbs)setLs(t,Math.min(400,n))}
+  else if(k==='st'){snap(i);const v2=!on('strike');for(const t of tbs)styleTb(t,{strike:v2})}
+  else if(k==='ff'){snap(i);for(const t of tbs)styleTb(t,{ff:String(v||'')})}
+  else if(k==='bu'){snap(i);for(const t of tbs)setBullet(t,v)}
+  else if(k==='lv'){snap(i);for(const t of tbs)for(const p of kids(t,'p')){let pp=kid(p,'pPr');if(!pp){pp=p.ownerDocument.createElementNS(ANS,'a:pPr');p.insertBefore(pp,p.firstChild)}pp.setAttribute('lvl',Math.max(0,Math.min(8,(+pp.getAttribute('lvl')||0)+ +v)))}}
   else if(k==='b'||k==='i'||k==='u'){snap(i);const o={};o[k]=!on(k);for(const t of tbs)styleTb(t,o)}
   else if(k==='al'){snap(i);for(const t of tbs)styleTb(t,{al:v})}
   else if(k==='va'){snap(i);for(const t of tbs){const bp=kid(t,'bodyPr');if(bp)bp.setAttribute('anchor',v)}}
@@ -1879,6 +2201,7 @@ document.addEventListener('keydown',e=>{
   if(m&&k==='z'){e.preventDefault();undo(e.shiftKey);return}
   if(m&&k==='y'){e.preventDefault();undo(true);return}
   if(m&&k==='d'){e.preventDefault();deckAct(doc.sel?'dupS':'dupSl');return}
+  if(m&&(k==='f'||k==='h')){e.preventDefault();findReplace();return}
   if(m&&k==='c'){e.preventDefault();copySel(false);updateDeckTools();return}
   if(m&&k==='x'){if(doc.sel){e.preventDefault();copySel(true)}return}
   if(m&&k==='v'){e.preventDefault();pasteClip();return}
@@ -1914,15 +2237,17 @@ function addTextBox(i,pos){
 function ctOverride(part,type){const o=doc.ct.createElementNS(CTNS,'Override');o.setAttribute('PartName','/'+part);o.setAttribute('ContentType',type);doc.ct.documentElement.appendChild(o)}
 function ctRemove(part){for(const o of [...doc.ct.getElementsByTagNameNS(CTNS,'Override')])if(o.getAttribute('PartName')==='/'+part)o.parentNode.removeChild(o)}
 let ridSeq=0;
-async function insertSlide(after,copy,srcIdx){
+async function insertSlide(after,copy,srcIdx,lay){
   const src=doc.slides[after],from=doc.slides[srcIdx==null?after:srcIdx]||src;const pres=doc.parts['ppt/presentation.xml'];
   let n=1;doc.zip.forEach(p=>{const m=/^ppt\/slides\/slide(\d+)\.xml$/.exec(p);if(m)n=Math.max(n,+m[1]+1)});
   for(const p in doc.parts){const m=/^ppt\/slides\/slide(\d+)\.xml$/.exec(p);if(m)n=Math.max(n,+m[1]+1)}
   const path=`ppt/slides/slide${n}.xml`;
   let xml,rels;
   if(copy){xml=serXml(from.part.dom);const rd=from.part.relsDom?parseXml(serXml(from.part.relsDom)):null;if(rd){for(const r of [...rd.getElementsByTagNameNS(RELNS,'Relationship')])if(/\/notesSlide$/.test(r.getAttribute('Type')))r.parentNode.removeChild(r);rels=serXml(rd)}}
-  else{xml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<p:sld xmlns:a="${ANS}" xmlns:r="${RNS}" xmlns:p="${PNS}"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
-    const lt=src.layout?src.layout.path.replace(/^ppt\//,'../'):'../slideLayouts/slideLayout1.xml';
+  else{const LP=lay||src.layout;let phx='',pid=2;
+    if(lay)for(const e of lay.dom.getElementsByTagNameNS(PNS,'sp')){const ph=phOf(e);if(!ph||['dt','ftr','sldNum'].includes(ph.getAttribute('type')))continue;const nv=e.firstElementChild.cloneNode(true),cn=nv.getElementsByTagNameNS(PNS,'cNvPr')[0];if(cn)cn.setAttribute('id',pid++);phx+=`<p:sp>${new XMLSerializer().serializeToString(nv)}<p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="ko-KR" altLang="en-US"/></a:p></p:txBody></p:sp>`}
+    xml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<p:sld xmlns:a="${ANS}" xmlns:r="${RNS}" xmlns:p="${PNS}"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${phx}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
+    const lt=LP?LP.path.replace(/^ppt\//,'../'):'../slideLayouts/slideLayout1.xml';
     rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="${RELNS}"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="${lt}"/></Relationships>`}
   doc.zip.file(path,xml);if(rels)doc.zip.file(relsPathOf(path),rels);
   ctOverride(path,'application/vnd.openxmlformats-officedocument.presentationml.slide+xml');
