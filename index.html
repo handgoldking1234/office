@@ -438,6 +438,11 @@ table.grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-siz
 .bar #saveBtn.idle,.bar #saveBtn.done,.bar #saveBtn.auto{background:transparent;border-color:#6b7078;color:#fff}
 .bar #saveBtn.need{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 0 3px rgba(10,102,216,.35)}
 @media(max-width:899px){#saveBtn .lbl{display:inline}#saveBtn{width:auto;height:auto;padding:8px 14px}}
+
+/* 하단 탭을 스크롤 영역 위 레이어로 올려 만들기 버튼이 가려지지 않게 */
+.bnav{position:relative;z-index:10;overflow:visible}
+.hscroll{position:relative;z-index:0}
+.home{padding-bottom:56px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
